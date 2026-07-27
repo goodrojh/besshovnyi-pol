@@ -511,8 +511,69 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .msgs--dark .msg { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.2); color: #fff; }
 .msgs--dark .msg:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); }
 .footer .msgs { margin-top: 14px; margin-bottom: 4px; }
-.footer .msg { height: 42px; padding: 0 14px; font-size: 14px; font-weight: 600; }
+/* .footer__contacts a задаёт display:block — возвращаем кнопкам inline-flex, иначе иконка встаёт над подписью */
+.footer__contacts .msg { display: inline-flex; height: 42px; padding: 0 14px; font-size: 14px; font-weight: 600; margin-bottom: 0; letter-spacing: -.01em; }
 .cta-band .msgs { margin-top: 18px; }
+
+/* ---------- Floating messengers ---------- */
+.fab {
+  position: fixed; right: 20px; bottom: 22px; z-index: 100;
+  display: flex; flex-direction: column; gap: 10px;
+  opacity: 0; visibility: hidden; transform: translateY(14px);
+  transition: opacity .35s var(--ease), transform .35s var(--ease), visibility .35s, bottom .3s var(--ease);
+}
+.fab.in { opacity: 1; visibility: visible; transform: none; }
+.fab__btn {
+  position: relative; width: 54px; height: 54px; border-radius: 50%; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 20px rgba(8,14,20,.18), inset 0 0 0 1px rgba(15,24,32,.06);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.fab__btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 28px rgba(8,14,20,.26); }
+.fab__btn svg { width: 28px; height: 28px; }
+.fab__btn img { width: 30px; height: 30px; border-radius: 8px; display: block; }
+.fab__btn--wa svg { color: #25D366; }
+.fab__btn--tg svg { color: #2AABEE; }
+.fab__btn span {
+  position: absolute; right: calc(100% + 12px); top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  background: #0f1820; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: -.01em;
+  padding: 8px 12px; border-radius: 9px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .25s var(--ease);
+}
+.fab__btn:hover span { opacity: 1; transform: translateY(-50%); }
+
+/* ---------- Promo ---------- */
+.promo {
+  position: fixed; left: 20px; bottom: 22px; z-index: 101;
+  width: min(370px, calc(100vw - 40px));
+  display: flex; gap: 14px; padding: 18px 18px 18px 16px;
+  background: #fff; border-radius: 18px; border: 1px solid var(--line);
+  box-shadow: 0 20px 50px rgba(8,14,20,.22);
+  animation: promoIn .45s var(--ease);
+}
+.promo[hidden] { display: none; }
+@keyframes promoIn { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+.promo__badge {
+  flex: none; width: 56px; height: 56px; border-radius: 14px;
+  background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 17px; letter-spacing: -.03em;
+  box-shadow: 0 8px 20px rgba(31,95,212,.32);
+}
+.promo__body { min-width: 0; }
+.promo__body b { display: block; font-size: 16px; letter-spacing: -.02em; }
+.promo__body p { font-size: 13.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.45; }
+.promo__body p b { display: inline; color: var(--ink); }
+.promo__body .btn { margin-top: 13px; height: 44px; font-size: 15px; }
+.promo__close {
+  position: absolute; top: 9px; right: 9px; width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; color: var(--ink-3);
+  transition: background .2s, color .2s;
+}
+.promo__close:hover { background: var(--bg-2); color: var(--ink); }
+.promo__close svg { width: 15px; height: 15px; }
+
+body.gal-open .fab, body.gal-open .promo { display: none; }
 
 /* ---------- Gallery modal ---------- */
 .gal { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 28px; }
@@ -592,6 +653,17 @@ body.gal-open { overflow: hidden; }
 .lb__nav--next { right: 20px; top: 50%; transform: translateY(-50%); }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .fab { right: 14px; bottom: 14px; gap: 8px; }
+  .fab__btn { width: 48px; height: 48px; }
+  .fab__btn svg { width: 25px; height: 25px; }
+  .fab__btn img { width: 27px; height: 27px; }
+  .fab__btn span { display: none; }
+  .promo { left: 12px; right: 12px; bottom: 12px; width: auto; padding: 15px; gap: 12px; }
+  .promo__badge { width: 48px; height: 48px; font-size: 15px; border-radius: 12px; }
+  /* плашка занимает низ экрана — поднимаем кнопки мессенджеров над ней */
+  body.promo-on .fab { bottom: calc(var(--promo-h, 0px) + 26px); }
+}
 @media (max-width: 900px) {
   .gal { padding: 0; }
   .gal__panel { border-radius: 0; height: 100%; width: 100%; }

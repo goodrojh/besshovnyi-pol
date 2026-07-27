@@ -636,6 +636,33 @@
   </div>
 </footer>
 
+<!-- ============ FLOATING MESSENGERS ============ -->
+<div class="fab" id="fab">
+  <!-- TODO: подставьте ссылку на профиль в MAX -->
+  <a class="fab__btn fab__btn--max" href="https://max.ru/" target="_blank" rel="noopener" aria-label="Написать в MAX">
+    <img src="assets/max.png" alt="" width="30" height="30" loading="lazy"><span>Написать в MAX</span>
+  </a>
+  <a class="fab__btn fab__btn--wa" href="https://wa.me/79191225271" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
+    <svg aria-hidden="true"><use href="#ic-wa"/></svg><span>Написать в WhatsApp</span>
+  </a>
+  <a class="fab__btn fab__btn--tg" href="https://t.me/+79191225271" target="_blank" rel="noopener" aria-label="Написать в Telegram">
+    <svg aria-hidden="true"><use href="#ic-tg"/></svg><span>Написать в Telegram</span>
+  </a>
+</div>
+
+<!-- ============ PROMO ============ -->
+<aside class="promo" id="promo" hidden>
+  <button type="button" class="promo__close" id="promoClose" aria-label="Закрыть">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <div class="promo__badge">−10%</div>
+  <div class="promo__body">
+    <b>Акция до конца месяца</b>
+    <p>Скидка <b>10% на монтаж</b> при заключении договора в этом месяце. Выезд инженера и смета — бесплатно.</p>
+    <button type="button" class="btn btn--primary btn--block" id="promoCta">Забрать скидку</button>
+  </div>
+</aside>
+
 <!-- ============ GALLERY MODAL ============ -->
 <div class="gal" id="gal" hidden>
   <div class="gal__backdrop" data-gal-close></div>

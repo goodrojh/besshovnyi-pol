@@ -118,6 +118,66 @@
   });
 
   /* ============================================================
+     FLOATING MESSENGERS + PROMO
+     ============================================================ */
+  var fab = document.getElementById('fab');
+  var promo = document.getElementById('promo');
+  var promoClose = document.getElementById('promoClose');
+  var promoCta = document.getElementById('promoCta');
+  var promoShown = false;
+  var promoTaken = false;
+  var PROMO_KEY = 'gks_promo_hidden_until';
+
+  function promoSuppressed() {
+    try {
+      var until = parseInt(localStorage.getItem(PROMO_KEY) || '0', 10);
+      return until > Date.now();
+    } catch (e) { return false; }
+  }
+  function suppressPromo(days) {
+    try { localStorage.setItem(PROMO_KEY, String(Date.now() + days * 864e5)); } catch (e) {}
+  }
+  function hidePromo() {
+    if (!promo) return;
+    promo.hidden = true;
+    document.body.classList.remove('promo-on');
+  }
+  function showPromo() {
+    if (!promo || promoShown || promoSuppressed()) return;
+    promoShown = true;
+    promo.hidden = false;
+    document.body.classList.add('promo-on');
+    document.body.style.setProperty('--promo-h', promo.offsetHeight + 'px');
+  }
+
+  if (promo) {
+    // показываем, когда посетитель прокрутил треть страницы или провёл на сайте 15 секунд
+    setTimeout(showPromo, 15000);
+    window.addEventListener('scroll', function () {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      if (h > 0 && (window.scrollY || document.documentElement.scrollTop) / h > 0.3) showPromo();
+    }, { passive: true });
+    window.addEventListener('resize', function () {
+      if (!promo.hidden) document.body.style.setProperty('--promo-h', promo.offsetHeight + 'px');
+    }, { passive: true });
+  }
+  if (promoClose) promoClose.addEventListener('click', function () { suppressPromo(3); hidePromo(); });
+  if (promoCta) promoCta.addEventListener('click', function () {
+    promoTaken = true;
+    suppressPromo(3);
+    hidePromo();
+    var q = document.getElementById('quiz');
+    if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  function updateFab() {
+    if (!fab) return;
+    fab.classList.toggle('in', (window.scrollY || document.documentElement.scrollTop) > window.innerHeight * 0.55);
+  }
+  window.addEventListener('scroll', updateFab, { passive: true });
+  window.addEventListener('resize', updateFab, { passive: true });
+
+  /* ============================================================
      LEAD SENDING
      Заявки уходят на почту через FormSubmit (без бэкенда).
      ВАЖНО: первая заявка активирует адрес — на GKSphere@yandex.com
@@ -368,6 +428,7 @@
         'Имя': name,
         'Телефон': phone,
         'Раздел': GAL[current.key] ? GAL[current.key].title : '—',
+        'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Галерея объектов на сайте'
       }, function (err) {
         if (err) {
@@ -497,6 +558,7 @@
         'Основание': quiz.baseLabel,
         'Ориентир, ₽/м²': Math.round(perM2),
         'Ориентир по объекту, ₽': Math.round(perM2 * quiz.area),
+        'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Калькулятор на сайте'
       }, function (err) {
         qNext.disabled = false;
@@ -517,4 +579,5 @@
   if (areaVal) areaVal.textContent = quiz.area.toLocaleString('ru-RU');
   showStep(1);
   onScroll();
+  updateFab();
 })();
