@@ -16,6 +16,12 @@
 
 <div class="scroll-progress" id="progress"></div>
 
+<!-- иконки мессенджеров (оригинальные глифы брендов), объявлены один раз -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="ic-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></symbol>
+  <symbol id="ic-tg" viewBox="0 0 24 24"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></symbol>
+</svg>
+
 <!-- ============ NAV ============ -->
 <header class="nav" id="nav">
   <div class="container nav__inner">
@@ -190,12 +196,12 @@
       <div class="cause reveal">
         <div class="cause__n">01</div>
         <div class="cause__bad">
-          <h4>Бетон не подготовлен дробеструём</h4>
-          <p>Полимер льют на пыльную или гладкую плиту. Сцепления нет, покрытие «бухтит» и отрывается пластами уже через сезон.</p>
+          <h4>Основание не отшлифовано</h4>
+          <p>Полимер льют прямо на цементное молочко, пыль и остатки старого покрытия. Сцепления с бетоном нет, пол «бухтит» и отрывается пластами уже через сезон.</p>
         </div>
         <div class="cause__good">
           <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Как у нас</span>
-          <p>Открываем поры бетона дробеструйной машиной или фрезой. У бригад-демпингёров такого оборудования нет.</p>
+          <p>Шлифуем основание алмазными машинами с промышленными пылесосами: снимаем цементное молочко и старые слои, выводим ровность и открываем поры бетона. Только после этого грунтуем.</p>
         </div>
       </div>
 
@@ -274,7 +280,7 @@
   <div class="container">
     <div class="sec-head">
       <span class="eyebrow">Как мы работаем</span>
-      <h2 class="h-sec reveal">От заявки до гарантийного сервиса</h2>
+      <h2 class="h-sec reveal">От заявки до сдачи объекта</h2>
       <p class="lead reveal" data-d="1">Ноль «сюрпризов» на объекте: всё, что влияет на цену и срок, мы вскрываем на диагностике и фиксируем до начала работ.</p>
     </div>
 
@@ -284,10 +290,9 @@
       <div class="step reveal"><div class="step__dot">01</div><div class="step__body"><h4>Заявка и бриф</h4><p>Уточняем тип объекта, площадь, режим эксплуатации и сроки. Отвечаем в течение рабочего дня.</p></div></div>
       <div class="step reveal"><div class="step__dot">02</div><div class="step__body"><h4>Выезд инженера и приборная диагностика</h4><p>Замеряем прочность, влажность и перепады основания. <span class="accent">Бесплатно, с письменным заключением.</span></p></div></div>
       <div class="step reveal"><div class="step__dot">03</div><div class="step__body"><h4>Подбор системы и фиксированная смета</h4><p>Считаем состав по слоям. Цена и срок фиксируются в договоре и не меняются после подписания.</p></div></div>
-      <div class="step reveal"><div class="step__dot">04</div><div class="step__body"><h4>Подготовка основания</h4><p>Дробеструйная обработка или фрезеровка, ремонт трещин и швов. Этап, который пропускают халтурщики.</p></div></div>
+      <div class="step reveal"><div class="step__dot">04</div><div class="step__body"><h4>Подготовка основания</h4><p>Шлифовка алмазными машинами с пылеудалением, ремонт трещин и швов. Этап, который пропускают халтурщики.</p></div></div>
       <div class="step reveal"><div class="step__dot">05</div><div class="step__body"><h4>Нанесение слоёв с контролем точки росы</h4><p>Грунт, базовые слои, финиш. Каждый слой под контролем условий. Работаем ночью и захватками при необходимости.</p></div></div>
       <div class="step reveal"><div class="step__dot">06</div><div class="step__body"><h4>Приёмка и исполнительная документация</h4><p>Сдаём технадзору с первого раза. Передаём полный пакет документов для тендеров и проверок.</p></div></div>
-      <div class="step reveal"><div class="step__dot">07</div><div class="step__body"><h4>Гарантийный сервис</h4><p>Плановые осмотры и оперативные выезды весь гарантийный срок. Покрытие остаётся вашей последней заботой.</p></div></div>
     </div>
   </div>
 </section>
@@ -304,7 +309,7 @@
     <article class="case reveal">
       <div class="case__media">
         <span class="case__badge"><i></i> в эксплуатации 4 года</span>
-        <img src="assets/food.jpg" alt="Цех мясопереработки с полимер-цементным полом и нержавеющим оборудованием" loading="lazy">
+        <img src="assets/case-01.jpg" alt="Цех мясопереработки с бесшовным полиуретан-цементным полом, галтелями и трапом" loading="lazy">
       </div>
       <div class="case__body">
         <span class="case__tag">Пищевое производство</span>
@@ -324,7 +329,7 @@
     <article class="case reveal">
       <div class="case__media">
         <span class="case__badge"><i></i> в эксплуатации 3 года</span>
-        <img src="assets/warehouse.jpg" alt="Логистический склад с эпоксидным полом, разметкой и ричтраком" loading="lazy">
+        <img src="assets/case-02.jpg" alt="Логистический склад с кварцнаполненным эпоксидным полом и разметкой проездов" loading="lazy">
       </div>
       <div class="case__body">
         <span class="case__tag">Склад и логистика</span>
@@ -344,7 +349,7 @@
     <article class="case reveal">
       <div class="case__media">
         <span class="case__badge"><i></i> в эксплуатации 2 года</span>
-        <img src="assets/hero-poster.jpg" alt="Производственный цех с маслостойким нескользящим полимерным полом" loading="lazy">
+        <img src="assets/case-03.jpg" alt="Машиностроительный цех с маслостойким полом, разметкой проездов и рабочих зон" loading="lazy">
       </div>
       <div class="case__body">
         <span class="case__tag">Производственный цех</span>
@@ -372,8 +377,7 @@
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Срок гарантии 3, 5 или 7 лет в зависимости от системы и нагрузки</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Параметры основания зафиксированы в акте диагностики</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Работаем как юрлицо: договор, реквизиты, исполнительная документация</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Гарантийные выезды и плановый сервис весь срок</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Работаем официально: договор, реквизиты, исполнительная документация</li>
         </ul>
       </div>
       <div class="doc reveal" data-d="1">
@@ -559,6 +563,21 @@
           <a href="#quiz" class="btn btn--light btn--lg btn--block">Рассчитать стоимость</a>
           <a href="tel:+79191225271" class="phone">+7 919 122-52-71</a>
           <small>Звоните с 9:00 до 20:00, без выходных</small>
+          <div class="msgs msgs--dark">
+            <span class="msgs__label">Или напишите в мессенджер</span>
+            <div class="msgs__row">
+              <!-- TODO: подставьте ссылку на профиль в MAX (max.ru не открывает чат по номеру) -->
+              <a class="msg msg--max" href="https://max.ru/" target="_blank" rel="noopener">
+                <img src="assets/max.png" alt="" width="22" height="22" loading="lazy">MAX
+              </a>
+              <a class="msg msg--wa" href="https://wa.me/79191225271" target="_blank" rel="noopener">
+                <svg aria-hidden="true"><use href="#ic-wa"/></svg>WhatsApp
+              </a>
+              <a class="msg msg--tg" href="https://t.me/+79191225271" target="_blank" rel="noopener">
+                <svg aria-hidden="true"><use href="#ic-tg"/></svg>Telegram
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -597,6 +616,14 @@
         <h5>Контакты</h5>
         <a href="tel:+79191225271">+7 919 122-52-71</a>
         <a href="mailto:GKSphere@yandex.com">GKSphere@yandex.com</a>
+        <div class="msgs msgs--dark">
+          <div class="msgs__row">
+            <!-- TODO: подставьте ссылку на профиль в MAX -->
+            <a class="msg msg--max" href="https://max.ru/" target="_blank" rel="noopener" aria-label="Написать в MAX"><img src="assets/max.png" alt="" width="22" height="22" loading="lazy">MAX</a>
+            <a class="msg msg--wa" href="https://wa.me/79191225271" target="_blank" rel="noopener" aria-label="Написать в WhatsApp"><svg aria-hidden="true"><use href="#ic-wa"/></svg>WhatsApp</a>
+            <a class="msg msg--tg" href="https://t.me/+79191225271" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg aria-hidden="true"><use href="#ic-tg"/></svg>Telegram</a>
+          </div>
+        </div>
         <!-- TODO: подставьте адрес офиса, если нужен -->
         <span style="margin-top:12px">Работаем по всей России</span>
         <span>Пн–Сб, 9:00–20:00</span>
@@ -604,8 +631,7 @@
     </div>
     <div class="footer__bottom">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
-      <!-- TODO: подставьте реквизиты юрлица -->
-      <span>ООО «___», ИНН ___ · Политика конфиденциальности</span>
+      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · Политика конфиденциальности</span>
     </div>
   </div>
 </footer>
@@ -633,6 +659,15 @@
           <h4>Нужен такой пол на вашем объекте?</h4>
           <p>Оставьте контакты — инженер приедет, проверит основание приборами и пришлёт смету по слоям. Выезд и диагностика бесплатно.</p>
           <a href="tel:+79191225271" class="gal__phone">+7 919 122-52-71</a>
+          <div class="msgs">
+            <span class="msgs__label">Или напишите в мессенджер</span>
+            <div class="msgs__row">
+              <!-- TODO: подставьте ссылку на профиль в MAX -->
+              <a class="msg msg--max" href="https://max.ru/" target="_blank" rel="noopener"><img src="assets/max.png" alt="" width="22" height="22" loading="lazy">MAX</a>
+              <a class="msg msg--wa" href="https://wa.me/79191225271" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#ic-wa"/></svg>WhatsApp</a>
+              <a class="msg msg--tg" href="https://t.me/+79191225271" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#ic-tg"/></svg>Telegram</a>
+            </div>
+          </div>
         </div>
         <form class="gal__form" id="galForm" novalidate>
           <div class="field"><label for="galName">Как вас зовут</label><input type="text" id="galName" placeholder="Имя" autocomplete="name"></div>

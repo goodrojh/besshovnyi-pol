@@ -492,6 +492,28 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ---------- Form error ---------- */
 .form-err { margin-top: 12px; font-size: 14px; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 12px; padding: 10px 12px; }
 
+/* ---------- Messenger buttons ---------- */
+.msgs { margin-top: 18px; }
+.msgs__label { display: block; font-size: 13px; color: var(--ink-3); margin-bottom: 10px; letter-spacing: .01em; }
+.msgs__row { display: flex; flex-wrap: wrap; gap: 9px; }
+.msg {
+  display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 17px;
+  border-radius: var(--r-pill); background: #fff; border: 1.5px solid var(--line-2);
+  font-weight: 600; font-size: 15px; color: var(--ink); letter-spacing: -.01em;
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s, background .25s;
+}
+.msg:hover { transform: translateY(-2px); box-shadow: var(--sh-1); border-color: var(--ink-3); }
+.msg svg { width: 22px; height: 22px; flex: none; }
+.msg img { width: 22px; height: 22px; flex: none; border-radius: 6px; }
+.msg--wa svg { color: #25D366; }
+.msg--tg svg { color: #2AABEE; }
+.msgs--dark .msgs__label { color: rgba(255,255,255,.62); }
+.msgs--dark .msg { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.2); color: #fff; }
+.msgs--dark .msg:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); }
+.footer .msgs { margin-top: 14px; margin-bottom: 4px; }
+.footer .msg { height: 42px; padding: 0 14px; font-size: 14px; font-weight: 600; }
+.cta-band .msgs { margin-top: 18px; }
+
 /* ---------- Gallery modal ---------- */
 .gal { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 28px; }
 .gal[hidden] { display: none; }
