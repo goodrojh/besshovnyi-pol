@@ -203,19 +203,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .hero__meta b { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
 .hero__meta small { font-size: 13px; color: var(--ink-3); }
 
-.hero__sound {
-  position: absolute; right: 24px; bottom: 26px; z-index: 3;
-  display: inline-flex; align-items: center; gap: 9px; height: 44px; padding-inline: 16px;
-  border-radius: var(--r-pill); font-size: 13.5px; font-weight: 600; color: var(--ink);
-  background: rgba(255,255,255,.78); backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.7); box-shadow: var(--sh-1);
-  transition: transform .25s var(--ease), box-shadow .25s;
+.field textarea {
+  width: 100%; min-height: 96px; resize: vertical; border-radius: var(--r-sm);
+  border: 1.5px solid var(--line); background: var(--panel);
+  padding: 13px 16px; font: inherit; font-size: 16px; line-height: 1.45; color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
 }
-.hero__sound:hover { transform: translateY(-2px); box-shadow: var(--sh-2); }
-.hero__sound svg { width: 18px; height: 18px; }
-.hero__sound .ic-on { display: none; }
-.hero__sound.on .ic-on { display: block; }
-.hero__sound.on .ic-off { display: none; }
+.field textarea::placeholder { color: var(--ink-3); }
+.field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(31,95,212,.12); }
+.field__hint { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 500; margin-top: 6px; }
 
 /* ---------- Trust band ---------- */
 .trust { background: #0f1820; color: #eaf0f5; padding-block: clamp(48px, 6vw, 76px); }
@@ -490,7 +486,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .mobile-menu__close { position: absolute; top: 22px; right: 22px; width: 46px; height: 46px; border-radius: 12px; border: 1.5px solid var(--line-2); font-size: 24px; }
 
 /* ---------- Form error ---------- */
-.form-err { margin-top: 12px; font-size: 14px; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 12px; padding: 10px 12px; }
+.form-err { margin-top: 12px; font-size: 14px; line-height: 1.5; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 12px; padding: 10px 12px; }
+.form-err a { color: #912018; font-weight: 600; text-decoration: underline; }
 
 /* ---------- Messenger buttons ---------- */
 .msgs { margin-top: 18px; }
@@ -701,7 +698,6 @@ body.gal-open { overflow: hidden; }
   .cause { grid-template-columns: 1fr; gap: 14px; padding: 24px 0; }
   .cause__n { padding-top: 0; }
   .case__spec { grid-template-columns: 1fr 1fr; }
-  .hero__sound { right: 16px; bottom: 16px; }
   .footer__top { grid-template-columns: 1fr; }
   .hero__card { padding: 24px 20px; }
   .brand img { height: 34px; }

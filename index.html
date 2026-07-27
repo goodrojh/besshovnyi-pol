@@ -82,11 +82,6 @@
     </div>
   </div>
 
-  <button class="hero__sound" id="soundBtn" aria-label="Включить звук">
-    <svg class="ic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6M17 9l6 6"/></svg>
-    <svg class="ic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>
-    <span id="soundLabel">Звук выкл.</span>
-  </button>
 </section>
 
 <!-- ============ TRUST ============ -->
@@ -491,6 +486,11 @@
             <p class="qsub">Инженер свяжется, согласует выезд и пришлёт расчёт по слоям.</p>
             <div class="field"><label for="qName">Как вас зовут</label><input type="text" id="qName" placeholder="Имя" autocomplete="name"></div>
             <div class="field"><label for="qPhone">Телефон</label><input type="tel" id="qPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel"></div>
+            <div class="field">
+              <label for="qComment">Комментарий к заявке</label>
+              <textarea id="qComment" rows="3" placeholder="Сроки, особенности объекта, вопросы по смете — что важно учесть"></textarea>
+              <span class="field__hint">Необязательно, но помогает точнее посчитать смету.</span>
+            </div>
             <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
             <p class="form-err" id="qErr" hidden></p>
           </div>
@@ -699,6 +699,10 @@
         <form class="gal__form" id="galForm" novalidate>
           <div class="field"><label for="galName">Как вас зовут</label><input type="text" id="galName" placeholder="Имя" autocomplete="name"></div>
           <div class="field"><label for="galPhone">Телефон</label><input type="tel" id="galPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel"></div>
+          <div class="field">
+            <label for="galComment">Комментарий к заявке</label>
+            <textarea id="galComment" rows="3" placeholder="Тип объекта, площадь, сроки, вопросы"></textarea>
+          </div>
           <button type="submit" class="btn btn--primary btn--lg btn--block" id="galSubmit">Оставить заявку</button>
           <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
           <p class="form-err" id="galErr" hidden></p>

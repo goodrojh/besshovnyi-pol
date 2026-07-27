@@ -88,21 +88,6 @@
     });
   }
 
-  /* ---------- Hero sound toggle ---------- */
-  var video = document.getElementById('heroVideo');
-  var soundBtn = document.getElementById('soundBtn');
-  var soundLabel = document.getElementById('soundLabel');
-  if (soundBtn && video) {
-    soundBtn.addEventListener('click', function () {
-      video.muted = !video.muted;
-      var on = !video.muted;
-      soundBtn.classList.toggle('on', on);
-      soundBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
-      if (soundLabel) soundLabel.textContent = on ? 'Звук вкл.' : 'Звук выкл.';
-      if (on) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
-    });
-  }
-
   /* ---------- FAQ ---------- */
   document.querySelectorAll('.faq__item').forEach(function (item) {
     var q = item.querySelector('.faq__q');
@@ -184,7 +169,10 @@
      придёт письмо со ссылкой подтверждения, её нужно один раз открыть.
      ============================================================ */
   var LEAD_URL = 'https://formsubmit.co/ajax/GKSphere@yandex.com';
-  var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам: +7 919 122-52-71 или напишите на GKSphere@yandex.com';
+  var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
+    'напишите в <a href="https://wa.me/79191225271" target="_blank" rel="noopener">WhatsApp</a>, ' +
+    '<a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
+    'или на <a href="mailto:GKSphere@yandex.com">GKSphere@yandex.com</a>.';
 
   function sendLead(fields, done) {
     if (!window.fetch) { done(new Error('fetch unsupported')); return; }
@@ -197,7 +185,14 @@
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    }).then(function () { done(null); }).catch(function (e) { done(e); });
+    }).then(function (data) {
+      // FormSubmit отвечает 200 даже когда письмо НЕ отправлено
+      // (например, форма ещё не активирована), поэтому проверяем поле success
+      if (!data || String(data.success) !== 'true') {
+        throw new Error(data && data.message ? data.message : 'lead not delivered');
+      }
+      done(null);
+    }).catch(function (e) { done(e); });
   }
 
   /* ============================================================
@@ -399,6 +394,7 @@
   var galForm = document.getElementById('galForm');
   var galName = document.getElementById('galName');
   var galPhone = document.getElementById('galPhone');
+  var galComment = document.getElementById('galComment');
   var galSubmit = document.getElementById('galSubmit');
   var galErr = document.getElementById('galErr');
   var galOk = document.getElementById('galOk');
@@ -427,6 +423,7 @@
       sendLead({
         'Имя': name,
         'Телефон': phone,
+        'Комментарий': galComment && galComment.value.trim() ? galComment.value.trim() : '—',
         'Раздел': GAL[current.key] ? GAL[current.key].title : '—',
         'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Галерея объектов на сайте'
@@ -435,7 +432,7 @@
           galSubmit.disabled = false;
           galSubmit.textContent = 'Оставить заявку';
           galErr.hidden = false;
-          galErr.textContent = LEAD_FAIL;
+          galErr.innerHTML = LEAD_FAIL;
           return;
         }
         galForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = true; });
@@ -549,9 +546,11 @@
       if (qErr) qErr.hidden = true;
       qNext.disabled = true;
       qNext.textContent = 'Отправляем…';
+      var qComment = document.getElementById('qComment');
       sendLead({
         'Имя': document.getElementById('qName').value.trim(),
         'Телефон': document.getElementById('qPhone').value.trim(),
+        'Комментарий': qComment && qComment.value.trim() ? qComment.value.trim() : '—',
         'Тип объекта': quiz.typeLabel,
         'Площадь, м²': quiz.area,
         'Нагрузка': quiz.loadLabel,
@@ -564,7 +563,7 @@
         qNext.disabled = false;
         qNext.textContent = 'Получить смету';
         if (err) {
-          if (qErr) { qErr.hidden = false; qErr.textContent = LEAD_FAIL; }
+          if (qErr) { qErr.hidden = false; qErr.innerHTML = LEAD_FAIL; }
           return;
         }
         showStep(quiz.totalSteps + 1);
