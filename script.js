@@ -180,8 +180,9 @@
      в @BotFather командой /revoke, сайт продолжит слать заявки на почту.
      ============================================================ */
   var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
-  var TG_TOKEN = '';   // TODO: токен бота от @BotFather
-  var TG_CHAT_ID = ''; // TODO: id группы (отрицательное число, например -1001234567890)
+  var TG_TOKEN = '8603826856:AAGFikvpRmOfoeWyIbzfqwtfoyjJIyJSQlE'; // бот @GKSphere_leads_bot
+  var TG_CHAT_ID = '-1004309963490';  // группа «ГК Сфера»
+  var TG_THREAD_ID = 2;               // тема «Заявки с сайта» (у группы включены темы)
   var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
     'напишите в <a href="https://wa.me/79191225271" target="_blank" rel="noopener">WhatsApp</a>, ' +
     '<a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
@@ -221,15 +222,17 @@
       if (v === '' || v === '—' || v === null || typeof v === 'undefined') return;
       lines.push('<b>' + tgEscape(k) + ':</b> ' + tgEscape(v));
     });
+    var payload = {
+      chat_id: TG_CHAT_ID,
+      text: lines.join('\n'),
+      parse_mode: 'HTML',
+      disable_web_page_preview: true
+    };
+    if (TG_THREAD_ID) payload.message_thread_id = TG_THREAD_ID;
     fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TG_CHAT_ID,
-        text: lines.join('\n'),
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-      })
+      body: JSON.stringify(payload)
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d || !d.ok) throw new Error(d && d.description ? d.description : 'telegram failed');
       done(null);
