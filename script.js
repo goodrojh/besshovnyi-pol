@@ -389,8 +389,122 @@
 
   var qFiles = attachFilePicker('qFiles', 'qFileList', 'qFileErr');
   var galFiles = attachFilePicker('galFiles', 'galFileList', 'galFileErr');
+  var lmFiles = attachFilePicker('lmFiles', 'lmFileList', 'lmFileErr');
   attachPhoneMask(document.getElementById('qPhone'));
   attachPhoneMask(document.getElementById('galPhone'));
+  attachPhoneMask(document.getElementById('lmPhone'));
+
+  /* ============================================================
+     БЫСТРАЯ ФОРМА ЗАЯВКИ
+     Открывается кнопкой в первом экране и карточками систем —
+     клиенту не обязательно проходить калькулятор, чтобы оставить номер.
+     ============================================================ */
+  var leadEl = document.getElementById('lead');
+  var leadForm = document.getElementById('leadForm');
+  var leadTitle = document.getElementById('leadTitle');
+  var leadDesc = document.getElementById('leadDesc');
+  var leadEyebrow = document.getElementById('leadEyebrow');
+  var lmName = document.getElementById('lmName');
+  var lmPhone = document.getElementById('lmPhone');
+  var lmComment = document.getElementById('lmComment');
+  var lmSubmit = document.getElementById('lmSubmit');
+  var lmErr = document.getElementById('lmErr');
+  var lmOk = document.getElementById('lmOk');
+  var leadAlt = document.getElementById('leadAlt');
+  var leadCtx = '';
+  var leadReturnFocus = null;
+
+  var LEAD_DEFAULT_DESC = 'Оставьте телефон — инженер перезвонит, уточнит задачу и посчитает смету. Можно приложить фото пола, тогда разговор будет предметным.';
+
+  function resetLeadForm() {
+    if (!leadForm) return;
+    leadForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = false; });
+    if (lmOk) lmOk.hidden = true;
+    if (lmErr) lmErr.hidden = true;
+    if (leadAlt) leadAlt.hidden = false;
+    if (lmFiles && lmFiles.clear) lmFiles.clear();
+    if (lmSubmit) { lmSubmit.disabled = false; lmSubmit.textContent = 'Отправить заявку'; }
+  }
+
+  function openLead(ctx, title, desc, eyebrow) {
+    if (!leadEl) return;
+    leadCtx = ctx || 'Быстрая форма на сайте';
+    leadReturnFocus = document.activeElement;
+    if (leadEyebrow) leadEyebrow.textContent = eyebrow || 'Заявка';
+    if (leadTitle) leadTitle.textContent = title || 'Подобрать систему под ваш объект';
+    if (leadDesc) leadDesc.textContent = desc || LEAD_DEFAULT_DESC;
+    resetLeadForm();
+    leadEl.hidden = false;
+    document.body.classList.add('lead-open');
+    var close = leadEl.querySelector('.lead__close');
+    if (close) close.focus();
+  }
+
+  function closeLead() {
+    if (!leadEl || leadEl.hidden) return;
+    leadEl.hidden = true;
+    document.body.classList.remove('lead-open');
+    if (leadReturnFocus && leadReturnFocus.focus) leadReturnFocus.focus();
+  }
+
+  document.querySelectorAll('[data-lead]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openLead(
+        btn.getAttribute('data-lead'),
+        btn.getAttribute('data-lead-title') || 'Подобрать систему под ваш объект',
+        btn.getAttribute('data-lead-desc') || ('Вы выбрали: ' + btn.getAttribute('data-lead') + '. ' + LEAD_DEFAULT_DESC),
+        btn.getAttribute('data-lead-eyebrow') || 'Заявка'
+      );
+    });
+  });
+  document.querySelectorAll('[data-lead-close]').forEach(function (b) {
+    b.addEventListener('click', closeLead);
+  });
+  var leadToQuiz = document.getElementById('leadToQuiz');
+  if (leadToQuiz) leadToQuiz.addEventListener('click', function () {
+    closeLead();
+    var q = document.getElementById('quiz');
+    if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  if (leadForm) {
+    leadForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = lmName.value.trim();
+      var phone = lmPhone.value.trim();
+      if (name.length < 2 || phone.replace(/\D/g, '').length < 10) {
+        lmErr.hidden = false;
+        lmErr.textContent = 'Укажите имя и телефон — инженер перезвонит по нему.';
+        return;
+      }
+      lmErr.hidden = true;
+      lmSubmit.disabled = true;
+      lmSubmit.textContent = 'Отправляем…';
+      submitLead({
+        'Имя': name,
+        'Телефон': phone,
+        'Комментарий': lmComment.value.trim() || '—',
+        'Интересует': leadCtx,
+        'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
+        'Источник': 'Быстрая форма на сайте'
+      }, lmFiles.files, function (n, total) {
+        lmSubmit.textContent = 'Отправляем файл ' + n + ' из ' + total + '…';
+      }, function (err) {
+        if (err) {
+          lmSubmit.disabled = false;
+          lmSubmit.textContent = 'Отправить заявку';
+          lmErr.hidden = false;
+          lmErr.innerHTML = LEAD_FAIL;
+          return;
+        }
+        leadForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = true; });
+        if (leadAlt) leadAlt.hidden = true;
+        lmOk.hidden = false;
+        // имя и телефон оставляем, комментарий чистим — он был про другой запрос
+        lmComment.value = '';
+      });
+    });
+  }
 
   /* ============================================================
      GALLERY — объекты по сегментам
@@ -584,7 +698,11 @@
       if (e.key === 'ArrowRight') stepLb(1);
       return;
     }
-    if (galEl && !galEl.hidden && e.key === 'Escape') closeGal();
+    if (galEl && !galEl.hidden && e.key === 'Escape') { closeGal(); return; }
+    if (leadEl && !leadEl.hidden && e.key === 'Escape') closeLead();
+  });
+  if (leadEl) leadEl.addEventListener('click', function (e) {
+    if (e.target === leadEl) closeLead();
   });
 
   /* ---------- Форма заявки в галерее ---------- */

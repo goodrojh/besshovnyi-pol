@@ -68,10 +68,10 @@
       <h1>Пол, о котором вы&nbsp;забудете на&nbsp;<em>десять лет</em></h1>
       <p class="hero__sub">Подбираем систему под вашу нагрузку и монтируем без остановки производства. Смета фиксируется в договоре, гарантия до 5 лет.</p>
       <div class="hero__cta">
-        <a href="#quiz" class="btn btn--primary btn--lg">
+        <button type="button" class="btn btn--primary btn--lg" data-lead="Кнопка «Получить расчёт за 24 часа»" data-lead-title="Получить расчёт за 24 часа" data-lead-desc="Оставьте телефон — инженер перезвонит, уточнит задачу по объекту и пришлёт смету. Можно сразу приложить фото пола.">
           Получить расчёт за 24 часа
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
+        </button>
         <a href="#cases" class="btn btn--ghost btn--lg">Смотреть объекты</a>
       </div>
       <div class="hero__meta">
@@ -231,41 +231,47 @@
 <section class="section" id="systems">
   <div class="container">
     <div class="sec-head">
-      <h2 class="h-sec reveal">Систему подбираем под задачу, а не со склада</h2>
-      <p class="lead reveal" data-d="1">Называем покрытия по их работе, а не по химии. Под вашу нагрузку, режим мойки и температуру подойдёт одна из систем ниже.</p>
+      <h2 class="h-sec reveal">Подбираем систему под конкретные задачи предприятия</h2>
+      <p class="lead reveal" data-d="1">Называем покрытия по их работе, а не по химии. Нажмите на подходящую — инженер уточнит режим эксплуатации и посчитает смету именно под неё.</p>
     </div>
 
     <div class="sys-grid">
-      <div class="sys reveal">
+      <button type="button" class="sys reveal" data-lead="Полиуретан-цемент — для мокрых зон и горячей мойки">
         <span class="sys__tag">Полиуретан-цемент</span>
         <h3>Для мокрых зон и горячей мойки</h3>
         <div class="sys__chips"><span class="chip">мойка 90 °C</span><span class="chip">кислоты и жиры</span><span class="chip">пар</span><span class="chip">стандарт ХАССП</span></div>
-      </div>
-      <div class="sys reveal" data-d="1">
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="sys reveal" data-d="1" data-lead="Эпоксидные наливные — для погрузчиков и стеллажей">
         <span class="sys__tag">Эпоксидные наливные</span>
         <h3>Для погрузчиков и стеллажей</h3>
         <div class="sys__chips"><span class="chip">износостойкость</span><span class="chip">ровность</span><span class="chip">обеспыливание</span><span class="chip">глянец</span></div>
-      </div>
-      <div class="sys reveal" data-d="2">
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="sys reveal" data-d="2" data-lead="Полиуретановые — для вибрации и морозильных камер">
         <span class="sys__tag">Полиуретановые</span>
         <h3>Для вибрации и морозильных камер</h3>
         <div class="sys__chips"><span class="chip">эластичность</span><span class="chip">удар</span><span class="chip">до −30 °C</span></div>
-      </div>
-      <div class="sys reveal">
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="sys reveal" data-lead="Метилметакрилат (ММА) — когда нельзя останавливать производство">
         <span class="sys__tag">Метилметакрилат (ММА)</span>
         <h3>Когда нельзя останавливаться</h3>
         <div class="sys__chips"><span class="chip">ввод за 2 часа</span><span class="chip">монтаж зимой</span><span class="chip">в минус</span></div>
-      </div>
-      <div class="sys reveal" data-d="1">
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="sys reveal" data-d="1" data-lead="Кварцнаполненные — для рамп и тяжёлых зон">
         <span class="sys__tag">Кварцнаполненные</span>
         <h3>Для рамп и тяжёлых зон</h3>
         <div class="sys__chips"><span class="chip">антискольжение</span><span class="chip">ресурс</span><span class="chip">высокая нагрузка</span></div>
-      </div>
-      <div class="sys reveal" data-d="2">
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="sys reveal" data-d="2" data-lead="Полимочевина — гидроизоляция чаш и резервуаров">
         <span class="sys__tag">Полимочевина</span>
         <h3>Гидроизоляция чаш и резервуаров</h3>
         <div class="sys__chips"><span class="chip">скорость</span><span class="chip">герметичность</span><span class="chip">эластичность</span></div>
-      </div>
+        <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
     </div>
   </div>
 </section>
@@ -642,7 +648,7 @@
     </div>
     <div class="footer__bottom">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
-      <span class="footer__made">Сайт сделан компанией <a href="https://lendingsphere.ru" target="_blank" rel="noopener">ЛендингСфера</a></span>
+      <span class="footer__made">Сайт сделан компанией <a href="https://lendingsfera.ru" target="_blank" rel="noopener">ЛендингСфера</a></span>
       <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · Политика конфиденциальности</span>
     </div>
   </div>
@@ -674,6 +680,49 @@
     <button type="button" class="btn btn--primary btn--block" id="promoCta">Забрать скидку</button>
   </div>
 </aside>
+
+<!-- ============ QUICK LEAD MODAL ============ -->
+<div class="lead" id="lead" hidden>
+  <div class="lead__backdrop" data-lead-close></div>
+  <div class="lead__panel" role="dialog" aria-modal="true" aria-labelledby="leadTitle">
+    <button type="button" class="lead__close" data-lead-close aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <span class="eyebrow" id="leadEyebrow">Заявка</span>
+    <h3 id="leadTitle">Получить расчёт за 24 часа</h3>
+    <p class="lead__desc" id="leadDesc"></p>
+
+    <form id="leadForm" novalidate>
+      <div class="field"><label for="lmName">Как вас зовут</label><input type="text" id="lmName" placeholder="Имя" autocomplete="name"></div>
+      <div class="field"><label for="lmPhone">Телефон</label><input type="tel" id="lmPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel"></div>
+      <div class="field">
+        <label for="lmComment">Комментарий <span class="field__opt">по желанию</span></label>
+        <textarea id="lmComment" rows="3" placeholder="Тип объекта, площадь, сроки, что сейчас с полом"></textarea>
+      </div>
+      <div class="field">
+        <label for="lmFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+        <label class="filedrop" for="lmFiles">
+          <input type="file" id="lmFiles" accept="image/*,video/*" multiple>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <span class="filedrop__text">Прикрепить фото или видео</span>
+          <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ</span>
+        </label>
+        <ul class="filelist" id="lmFileList"></ul>
+        <p class="filelist__err" id="lmFileErr" hidden></p>
+      </div>
+      <button type="submit" class="btn btn--primary btn--lg btn--block" id="lmSubmit">Отправить заявку</button>
+      <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
+      <p class="form-err" id="lmErr" hidden></p>
+      <div class="gal__ok" id="lmOk" hidden>
+        <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <b>Заявка принята</b>
+        <span>Инженер свяжется с вами в течение рабочего дня.</span>
+      </div>
+    </form>
+
+    <p class="lead__alt" id="leadAlt">Хотите прикинуть цену сами? <button type="button" id="leadToQuiz">Открыть калькулятор</button></p>
+  </div>
+</div>
 
 <!-- ============ GALLERY MODAL ============ -->
 <div class="gal" id="gal" hidden>
