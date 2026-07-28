@@ -165,14 +165,14 @@
   /* ============================================================
      LEAD SENDING
      Заявки уходят на почту через FormSubmit (без бэкенда).
-     ВАЖНО: первая заявка активирует адрес — на GKSphere@yandex.com
+     ВАЖНО: первая заявка активирует адрес — на gksphere@inbox.ru
      придёт письмо со ссылкой подтверждения, её нужно один раз открыть.
      ============================================================ */
-  var LEAD_URL = 'https://formsubmit.co/ajax/GKSphere@yandex.com';
+  var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
   var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
     'напишите в <a href="https://wa.me/79191225271" target="_blank" rel="noopener">WhatsApp</a>, ' +
     '<a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
-    'или на <a href="mailto:GKSphere@yandex.com">GKSphere@yandex.com</a>.';
+    'или на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>.';
 
   function sendLead(fields, done) {
     if (!window.fetch) { done(new Error('fetch unsupported')); return; }
