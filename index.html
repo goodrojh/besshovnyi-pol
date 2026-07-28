@@ -491,6 +491,17 @@
               <textarea id="qComment" rows="3" placeholder="Сроки, особенности объекта, вопросы по смете — что важно учесть"></textarea>
               <span class="field__hint">Необязательно, но помогает точнее посчитать смету.</span>
             </div>
+            <div class="field">
+              <label for="qFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+              <label class="filedrop" for="qFiles">
+                <input type="file" id="qFiles" accept="image/*,video/*" multiple>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                <span class="filedrop__text">Прикрепить фото или видео</span>
+                <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ. Так инженер увидит основание заранее.</span>
+              </label>
+              <ul class="filelist" id="qFileList"></ul>
+              <p class="filelist__err" id="qFileErr" hidden></p>
+            </div>
             <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
             <p class="form-err" id="qErr" hidden></p>
           </div>
@@ -631,6 +642,7 @@
     </div>
     <div class="footer__bottom">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
+      <span class="footer__made">Сайт сделан компанией <a href="https://lendingsphere.ru" target="_blank" rel="noopener">ЛендингСфера</a></span>
       <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · Политика конфиденциальности</span>
     </div>
   </div>
@@ -702,6 +714,17 @@
           <div class="field">
             <label for="galComment">Комментарий к заявке</label>
             <textarea id="galComment" rows="3" placeholder="Тип объекта, площадь, сроки, вопросы"></textarea>
+          </div>
+          <div class="field">
+            <label for="galFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+            <label class="filedrop" for="galFiles">
+              <input type="file" id="galFiles" accept="image/*,video/*" multiple>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <span class="filedrop__text">Прикрепить фото или видео</span>
+              <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ</span>
+            </label>
+            <ul class="filelist" id="galFileList"></ul>
+            <p class="filelist__err" id="galFileErr" hidden></p>
           </div>
           <button type="submit" class="btn btn--primary btn--lg btn--block" id="galSubmit">Оставить заявку</button>
           <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>

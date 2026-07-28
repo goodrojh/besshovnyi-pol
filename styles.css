@@ -212,6 +212,35 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .field textarea::placeholder { color: var(--ink-3); }
 .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(31,95,212,.12); }
 .field__hint { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 500; margin-top: 6px; }
+.field__opt { font-weight: 500; color: var(--ink-3); }
+
+/* ---------- Вложения к заявке ---------- */
+.filedrop {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
+  padding: 20px 16px; border-radius: var(--r-sm); cursor: pointer;
+  border: 1.5px dashed var(--line-2); background: var(--bg-2);
+  transition: border-color .2s, background .2s;
+}
+.filedrop:hover { border-color: var(--accent); background: var(--accent-soft); }
+.filedrop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.filedrop svg { width: 24px; height: 24px; color: var(--accent-2); margin-bottom: 4px; }
+.filedrop__text { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.filedrop__hint { font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
+.filelist { list-style: none; display: grid; gap: 8px; margin-top: 10px; }
+.filelist:empty { margin-top: 0; }
+.filelist li {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 12px;
+  border-radius: 11px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px;
+}
+.filelist .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.filelist .sz { flex: none; color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+.filelist .rm {
+  flex: none; width: 26px; height: 26px; border-radius: 8px; color: var(--ink-3);
+  display: flex; align-items: center; justify-content: center; transition: background .2s, color .2s;
+}
+.filelist .rm:hover { background: #fef3f2; color: #b42318; }
+.filelist .rm svg { width: 14px; height: 14px; }
+.filelist__err { margin-top: 9px; font-size: 13px; color: #b42318; }
 
 /* ---------- Trust band ---------- */
 .trust { background: #0f1820; color: #eaf0f5; padding-block: clamp(48px, 6vw, 76px); }
@@ -464,6 +493,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .footer__contacts a { display: block; color: #eaf0f5; font-weight: 600; font-size: 17px; margin-bottom: 8px; letter-spacing: -.01em; }
 .footer__contacts span { font-size: 14px; display: block; margin-bottom: 4px; }
 .footer__bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; padding-top: 26px; font-size: 13px; color: #5e7184; }
+.footer__made a { color: #9fb1c0; font-weight: 600; border-bottom: 1px solid rgba(159,177,192,.35); transition: color .2s, border-color .2s; }
+.footer__made a:hover { color: #fff; border-color: #fff; }
 
 /* ---------- Reveal animation ---------- */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }

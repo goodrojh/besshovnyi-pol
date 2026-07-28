@@ -1,6 +1,7 @@
 # local dev only
 .claude/
 server.ps1
+_прайс-опросник.html
 
 # OS / editor junk
 desktop.ini

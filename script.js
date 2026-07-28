@@ -239,16 +239,158 @@
     }).catch(function (e) { done(e); });
   }
 
-  // Шлём заявку во все каналы разом; принято — если сработал хотя бы один
-  function submitLead(fields, done) {
-    var pending = 2, delivered = false, lastErr = null;
-    function step(err) {
-      if (err) { lastErr = err; } else { delivered = true; }
-      if (--pending === 0) done(delivered ? null : (lastErr || new Error('lead failed')));
-    }
-    sendLead(fields, step);
-    sendTelegram(fields, step);
+  /* ---------- Вложения: грузим в Telegram, в письмо кладём ссылки ---------- */
+  var MAX_FILES = 5;
+  var MAX_FILE_MB = 45;
+
+  function tgUpload(file, caption, done) {
+    // фото до 9 МБ шлём как photo (показывается в чате), остальное — как файл без сжатия
+    var asPhoto = /^image\//.test(file.type) && file.size <= 9 * 1024 * 1024;
+    var fd = new FormData();
+    fd.append('chat_id', TG_CHAT_ID);
+    if (TG_THREAD_ID) fd.append('message_thread_id', String(TG_THREAD_ID));
+    if (caption) fd.append('caption', caption);
+    fd.append(asPhoto ? 'photo' : 'document', file, file.name);
+    fetch('https://api.telegram.org/bot' + TG_TOKEN + '/' + (asPhoto ? 'sendPhoto' : 'sendDocument'), {
+      method: 'POST', body: fd
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw new Error(d && d.description ? d.description : 'upload failed');
+      var res = d.result || {};
+      var fileId = res.document ? res.document.file_id
+        : (res.photo && res.photo.length ? res.photo[res.photo.length - 1].file_id
+          : (res.video ? res.video.file_id : null));
+      if (!fileId) { done(null, null); return null; }
+      return fetch('https://api.telegram.org/bot' + TG_TOKEN + '/getFile?file_id=' + encodeURIComponent(fileId))
+        .then(function (r) { return r.json(); })
+        .then(function (f) {
+          var path = f && f.ok && f.result ? f.result.file_path : null;
+          done(null, path ? 'https://api.telegram.org/file/bot' + TG_TOKEN + '/' + path : null);
+        });
+    }).catch(function (e) { done(e, null); });
   }
+
+  function tgUploadAll(files, caption, onProgress, done) {
+    if (!files.length || !TG_TOKEN || !TG_CHAT_ID) { done([]); return; }
+    var links = [], i = 0;
+    (function next() {
+      if (i >= files.length) { done(links); return; }
+      if (onProgress) onProgress(i + 1, files.length);
+      tgUpload(files[i], caption, function (err, link) {
+        if (link) links.push(link);
+        i++; next();
+      });
+    })();
+  }
+
+  // Шлём заявку во все каналы разом; принято — если сработал хотя бы один
+  function submitLead(fields, files, onProgress, done) {
+    files = files || [];
+    var caption = 'Заявка с сайта: ' + (fields['Имя'] || '') + ', ' + (fields['Телефон'] || '');
+    tgUploadAll(files, caption, onProgress, function (links) {
+      var mail = {}, tg = {};
+      Object.keys(fields).forEach(function (k) { mail[k] = fields[k]; tg[k] = fields[k]; });
+      if (files.length) {
+        mail['Файлы от клиента'] = links.length ? links.join('\n')
+          : (TG_TOKEN && TG_CHAT_ID ? files.length + ' шт. — смотрите в группе Telegram'
+            : files.length + ' шт. — передать не удалось, запросите у клиента');
+        tg['Файлы от клиента'] = files.length + ' шт. — прикреплены сообщениями выше';
+      }
+      var pending = 2, delivered = false, lastErr = null;
+      function step(err) {
+        if (err) { lastErr = err; } else { delivered = true; }
+        if (--pending === 0) done(delivered ? null : (lastErr || new Error('lead failed')));
+      }
+      sendLead(mail, step);
+      sendTelegram(tg, step);
+    });
+  }
+
+  /* ---------- Телефон: поле сразу начинается с +7 ---------- */
+  function attachPhoneMask(el) {
+    if (!el) return;
+    el.setAttribute('inputmode', 'tel');
+    function digitsOf(v) {
+      var d = String(v).replace(/\D/g, '');
+      if (d.charAt(0) === '7' || d.charAt(0) === '8') d = d.slice(1);
+      return d.slice(0, 10);
+    }
+    function render(d) {
+      var s = '+7';
+      if (d.length) s += ' (' + d.slice(0, 3);
+      if (d.length >= 3) s += ')';
+      if (d.length > 3) s += ' ' + d.slice(3, 6);
+      if (d.length > 6) s += '-' + d.slice(6, 8);
+      if (d.length > 8) s += '-' + d.slice(8, 10);
+      return s;
+    }
+    el.addEventListener('focus', function () {
+      if (!el.value) { el.value = '+7 '; el._d = ''; }
+    });
+    el.addEventListener('input', function (e) {
+      var d = digitsOf(el.value);
+      // backspace по скобке или дефису должен стирать цифру, а не топтаться на месте
+      if (e && e.inputType && e.inputType.indexOf('delete') === 0 && d === el._d) d = d.slice(0, -1);
+      el._d = d;
+      el.value = render(d);
+      try { el.setSelectionRange(el.value.length, el.value.length); } catch (err) {}
+    });
+    el.addEventListener('blur', function () {
+      if (digitsOf(el.value).length === 0) { el.value = ''; el._d = ''; }
+    });
+  }
+
+  /* ---------- Список выбранных файлов ---------- */
+  function attachFilePicker(inputId, listId, errId) {
+    var input = document.getElementById(inputId);
+    var list = document.getElementById(listId);
+    var err = document.getElementById(errId);
+    var state = { files: [] };
+    if (!input || !list) return state;
+
+    function size(b) {
+      return b >= 1048576 ? (b / 1048576).toFixed(1) + ' МБ' : Math.max(1, Math.round(b / 1024)) + ' КБ';
+    }
+    function say(msg) {
+      if (!err) return;
+      err.hidden = !msg;
+      err.textContent = msg || '';
+    }
+    function render() {
+      list.innerHTML = '';
+      state.files.forEach(function (f, i) {
+        var li = document.createElement('li');
+        var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = f.name;
+        var sz = document.createElement('span'); sz.className = 'sz'; sz.textContent = size(f.size);
+        var rm = document.createElement('button');
+        rm.type = 'button'; rm.className = 'rm'; rm.setAttribute('aria-label', 'Убрать файл');
+        rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        rm.addEventListener('click', function () { state.files.splice(i, 1); say(''); render(); });
+        li.appendChild(nm); li.appendChild(sz); li.appendChild(rm);
+        list.appendChild(li);
+      });
+    }
+    input.addEventListener('change', function () {
+      var skippedBig = 0, skippedMany = 0;
+      Array.prototype.forEach.call(input.files, function (f) {
+        if (state.files.length >= MAX_FILES) { skippedMany++; return; }
+        if (f.size > MAX_FILE_MB * 1024 * 1024) { skippedBig++; return; }
+        state.files.push(f);
+      });
+      input.value = '';
+      var msg = '';
+      if (skippedBig) msg = 'Файл больше ' + MAX_FILE_MB + ' МБ приложить не получится — снимите видео покороче или пришлите его в мессенджер.';
+      else if (skippedMany) msg = 'Можно приложить не больше ' + MAX_FILES + ' файлов.';
+      say(msg);
+      render();
+    });
+    state.clear = function () { state.files = []; say(''); render(); };
+    return state;
+  }
+
+  var qFiles = attachFilePicker('qFiles', 'qFileList', 'qFileErr');
+  var galFiles = attachFilePicker('galFiles', 'galFileList', 'galFileErr');
+  attachPhoneMask(document.getElementById('qPhone'));
+  attachPhoneMask(document.getElementById('galPhone'));
 
   /* ============================================================
      GALLERY — объекты по сегментам
@@ -459,6 +601,7 @@
     galForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = false; });
     if (galOk) galOk.hidden = true;
     if (galErr) galErr.hidden = true;
+    if (galFiles && galFiles.clear) galFiles.clear();
     if (galSubmit) { galSubmit.disabled = false; galSubmit.textContent = 'Оставить заявку'; }
   }
 
@@ -482,6 +625,8 @@
         'Раздел': GAL[current.key] ? GAL[current.key].title : '—',
         'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Галерея объектов на сайте'
+      }, galFiles.files, function (n, total) {
+        galSubmit.textContent = 'Отправляем файл ' + n + ' из ' + total + '…';
       }, function (err) {
         if (err) {
           galSubmit.disabled = false;
@@ -614,6 +759,8 @@
         'Ориентир по объекту, ₽': Math.round(perM2 * quiz.area),
         'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Калькулятор на сайте'
+      }, qFiles.files, function (n, total) {
+        qNext.textContent = 'Отправляем файл ' + n + ' из ' + total + '…';
       }, function (err) {
         qNext.disabled = false;
         qNext.textContent = 'Получить смету';
