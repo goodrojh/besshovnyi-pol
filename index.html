@@ -682,15 +682,15 @@
 </aside>
 
 <!-- ============ QUICK LEAD MODAL ============ -->
-<div class="lead" id="lead" hidden>
-  <div class="lead__backdrop" data-lead-close></div>
-  <div class="lead__panel" role="dialog" aria-modal="true" aria-labelledby="leadTitle">
-    <button type="button" class="lead__close" data-lead-close aria-label="Закрыть">
+<div class="qform" id="lead" hidden>
+  <div class="qform__backdrop" data-lead-close></div>
+  <div class="qform__panel" role="dialog" aria-modal="true" aria-labelledby="leadTitle">
+    <button type="button" class="qform__close" data-lead-close aria-label="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <span class="eyebrow" id="leadEyebrow">Заявка</span>
     <h3 id="leadTitle">Получить расчёт за 24 часа</h3>
-    <p class="lead__desc" id="leadDesc"></p>
+    <p class="qform__desc" id="leadDesc"></p>
 
     <form id="leadForm" novalidate>
       <div class="field"><label for="lmName">Как вас зовут</label><input type="text" id="lmName" placeholder="Имя" autocomplete="name"></div>
@@ -720,7 +720,7 @@
       </div>
     </form>
 
-    <p class="lead__alt" id="leadAlt">Хотите прикинуть цену сами? <button type="button" id="leadToQuiz">Открыть калькулятор</button></p>
+    <p class="qform__alt" id="leadAlt">Хотите прикинуть цену сами? <button type="button" id="leadToQuiz">Открыть калькулятор</button></p>
   </div>
 </div>
 

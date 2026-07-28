@@ -435,15 +435,15 @@
     if (leadDesc) leadDesc.textContent = desc || LEAD_DEFAULT_DESC;
     resetLeadForm();
     leadEl.hidden = false;
-    document.body.classList.add('lead-open');
-    var close = leadEl.querySelector('.lead__close');
+    document.body.classList.add('qform-open');
+    var close = leadEl.querySelector('.qform__close');
     if (close) close.focus();
   }
 
   function closeLead() {
     if (!leadEl || leadEl.hidden) return;
     leadEl.hidden = true;
-    document.body.classList.remove('lead-open');
+    document.body.classList.remove('qform-open');
     if (leadReturnFocus && leadReturnFocus.focus) leadReturnFocus.focus();
   }
 
