@@ -184,8 +184,7 @@
   var TG_CHAT_ID = '-1004309963490';  // группа «ГК Сфера»
   var TG_THREAD_ID = 2;               // тема «Заявки с сайта» (у группы включены темы)
   var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
-    'напишите в <a href="https://wa.me/79191225271" target="_blank" rel="noopener">WhatsApp</a>, ' +
-    '<a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
+    'напишите в <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
     'или на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>.';
 
   function sendLead(fields, done) {
