@@ -164,11 +164,24 @@
 
   /* ============================================================
      LEAD SENDING
-     Заявки уходят на почту через FormSubmit (без бэкенда).
-     ВАЖНО: первая заявка активирует адрес — на gksphere@inbox.ru
+     Заявка уходит сразу по двум каналам: на почту через FormSubmit
+     и в группу Telegram. Заявка считается принятой, если сработал
+     хотя бы один канал — так лид не теряется, если почта отвалилась.
+
+     ПОЧТА. ВАЖНО: первая заявка активирует адрес — на gksphere@inbox.ru
      придёт письмо со ссылкой подтверждения, её нужно один раз открыть.
+
+     TELEGRAM. Чтобы включить уведомления в группу:
+       1. @BotFather → /newbot → получите токен;
+       2. создайте группу с коллегами и добавьте туда бота;
+       3. впишите токен и id группы в две строки ниже.
+     Учтите: токен виден в коде сайта. Бота заводите только под заявки
+     и не делайте админом группы. Если начнётся спам — отзовите токен
+     в @BotFather командой /revoke, сайт продолжит слать заявки на почту.
      ============================================================ */
   var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
+  var TG_TOKEN = '';   // TODO: токен бота от @BotFather
+  var TG_CHAT_ID = ''; // TODO: id группы (отрицательное число, например -1001234567890)
   var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
     'напишите в <a href="https://wa.me/79191225271" target="_blank" rel="noopener">WhatsApp</a>, ' +
     '<a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
@@ -193,6 +206,45 @@
       }
       done(null);
     }).catch(function (e) { done(e); });
+  }
+
+  function tgEscape(v) {
+    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function sendTelegram(fields, done) {
+    if (!TG_TOKEN || !TG_CHAT_ID) { done(new Error('telegram not configured')); return; }
+    if (!window.fetch) { done(new Error('fetch unsupported')); return; }
+    var lines = ['<b>Новая заявка с сайта ГК Сфера</b>', ''];
+    Object.keys(fields).forEach(function (k) {
+      var v = fields[k];
+      if (v === '' || v === '—' || v === null || typeof v === 'undefined') return;
+      lines.push('<b>' + tgEscape(k) + ':</b> ' + tgEscape(v));
+    });
+    fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TG_CHAT_ID,
+        text: lines.join('\n'),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw new Error(d && d.description ? d.description : 'telegram failed');
+      done(null);
+    }).catch(function (e) { done(e); });
+  }
+
+  // Шлём заявку во все каналы разом; принято — если сработал хотя бы один
+  function submitLead(fields, done) {
+    var pending = 2, delivered = false, lastErr = null;
+    function step(err) {
+      if (err) { lastErr = err; } else { delivered = true; }
+      if (--pending === 0) done(delivered ? null : (lastErr || new Error('lead failed')));
+    }
+    sendLead(fields, step);
+    sendTelegram(fields, step);
   }
 
   /* ============================================================
@@ -420,7 +472,7 @@
       galErr.hidden = true;
       galSubmit.disabled = true;
       galSubmit.textContent = 'Отправляем…';
-      sendLead({
+      submitLead({
         'Имя': name,
         'Телефон': phone,
         'Комментарий': galComment && galComment.value.trim() ? galComment.value.trim() : '—',
@@ -547,7 +599,7 @@
       qNext.disabled = true;
       qNext.textContent = 'Отправляем…';
       var qComment = document.getElementById('qComment');
-      sendLead({
+      submitLead({
         'Имя': document.getElementById('qName').value.trim(),
         'Телефон': document.getElementById('qPhone').value.trim(),
         'Комментарий': qComment && qComment.value.trim() ? qComment.value.trim() : '—',
