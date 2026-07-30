@@ -377,7 +377,7 @@
       });
       input.value = '';
       var msg = '';
-      if (skippedBig) msg = 'Файл больше ' + MAX_FILE_MB + ' МБ приложить не получится — снимите видео покороче или пришлите его в мессенджер.';
+      if (skippedBig) msg = 'Файл больше ' + MAX_FILE_MB + ' МБ приложить не получится — пришлите его на gksphere@inbox.ru или в Telegram.';
       else if (skippedMany) msg = 'Можно приложить не больше ' + MAX_FILES + ' файлов.';
       say(msg);
       render();
@@ -761,11 +761,13 @@
   /* ============================================================
      QUIZ / CALCULATOR
      ============================================================ */
+  // Цену клиенту не показываем — квиз только собирает вводные по объекту
+  // и отдаёт их менеджеру вместе с заявкой.
   var quiz = {
-    type: null, typePrice: 0, typeLabel: '',
+    type: null, typeLabel: '',
     area: 1000,
-    loadMult: 0, loadLabel: '',
-    baseAdd: 0, baseLabel: '',
+    loadSel: false, loadLabel: '',
+    baseLabel: '',
     step: 1, totalSteps: 5
   };
 
@@ -774,25 +776,8 @@
   var qNext = document.getElementById('quizNext');
   var qBack = document.getElementById('quizBack');
   var qSteps = document.querySelectorAll('.qstep');
-  var estVal = document.getElementById('estVal');
-  var estHint = document.getElementById('estHint');
   var areaRange = document.getElementById('areaRange');
   var areaVal = document.getElementById('areaVal');
-
-  function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
-
-  function calc() {
-    if (!quiz.type || !quiz.loadMult) {
-      if (estVal) estVal.innerHTML = '<small>укажите параметры объекта</small>';
-      if (estHint) estHint.textContent = 'Выберите параметры объекта, чтобы увидеть расчёт.';
-      return;
-    }
-    var perM2 = quiz.typePrice * quiz.loadMult + quiz.baseAdd;
-    var total = perM2 * quiz.area;
-    var low = total * 0.88, high = total * 1.12;
-    if (estVal) estVal.innerHTML = 'от ' + fmt(low) + ' до ' + fmt(high) + ' <small>₽</small>';
-    if (estHint) estHint.textContent = 'Примерно ' + fmt(perM2) + ' ₽/м² · ' + fmt(quiz.area) + ' м². Точную смету пришлём после выезда.';
-  }
 
   function showStep(n) {
     quiz.step = n;
@@ -813,7 +798,7 @@
   function stepValid(n) {
     if (n === 1) return !!quiz.type;
     if (n === 2) return true;
-    if (n === 3) return !!quiz.loadMult;
+    if (n === 3) return quiz.loadSel;
     if (n === 4) return quiz.baseLabel !== '';
     if (n === 5) {
       var name = document.getElementById('qName').value.trim();
@@ -830,10 +815,9 @@
         group.querySelectorAll('.opt').forEach(function (o) { o.classList.remove('sel'); });
         opt.classList.add('sel');
         var g = group.getAttribute('data-group');
-        if (g === 'type') { quiz.type = opt.getAttribute('data-val'); quiz.typePrice = parseFloat(opt.getAttribute('data-price')); quiz.typeLabel = opt.getAttribute('data-val'); }
-        if (g === 'load') { quiz.loadMult = parseFloat(opt.getAttribute('data-mult')); quiz.loadLabel = opt.getAttribute('data-val'); }
-        if (g === 'base') { quiz.baseAdd = parseFloat(opt.getAttribute('data-add')); quiz.baseLabel = opt.getAttribute('data-val'); }
-        calc();
+        if (g === 'type') { quiz.type = opt.getAttribute('data-val'); quiz.typeLabel = opt.getAttribute('data-val'); }
+        if (g === 'load') { quiz.loadSel = true; quiz.loadLabel = opt.getAttribute('data-val'); }
+        if (g === 'base') { quiz.baseLabel = opt.getAttribute('data-val'); }
         if (qNext) qNext.disabled = !stepValid(quiz.step);
       });
     });
@@ -844,7 +828,6 @@
     areaRange.addEventListener('input', function () {
       quiz.area = parseInt(areaRange.value, 10);
       if (areaVal) areaVal.textContent = quiz.area.toLocaleString('ru-RU');
-      calc();
     });
   }
 
@@ -859,7 +842,6 @@
   if (qNext) qNext.addEventListener('click', function () {
     if (!stepValid(quiz.step)) return;
     if (quiz.step === quiz.totalSteps) {
-      var perM2 = quiz.typePrice * quiz.loadMult + quiz.baseAdd;
       if (qErr) qErr.hidden = true;
       qNext.disabled = true;
       qNext.textContent = 'Отправляем…';
@@ -872,10 +854,8 @@
         'Площадь, м²': quiz.area,
         'Нагрузка': quiz.loadLabel,
         'Основание': quiz.baseLabel,
-        'Ориентир, ₽/м²': Math.round(perM2),
-        'Ориентир по объекту, ₽': Math.round(perM2 * quiz.area),
         'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
-        'Источник': 'Калькулятор на сайте'
+        'Источник': 'Подбор системы на сайте'
       }, qFiles.files, function (n, total) {
         qNext.textContent = 'Отправляем файл ' + n + ' из ' + total + '…';
       }, function (err) {

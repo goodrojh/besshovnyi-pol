@@ -38,8 +38,10 @@
       <a href="#faq">Вопросы</a>
     </nav>
     <div class="nav__right">
-      <a href="tel:+79191225271" class="nav__phone">+7 919 122-52-71</a>
-      <a href="#quiz" class="btn btn--primary">Рассчитать пол</a>
+      <a href="tel:+79191225271" class="nav__phone" aria-label="Позвонить Наталье, менеджеру: +7 919 122-52-71">
+        <small>Наталья, менеджер</small>+7 919 122-52-71
+      </a>
+      <a href="#quiz" class="btn btn--primary">Подобрать пол</a>
       <button class="nav__burger" id="burger" aria-label="Меню"><span></span></button>
     </div>
   </div>
@@ -53,8 +55,8 @@
   <a href="#process">Как работаем</a>
   <a href="#guarantee">Гарантия</a>
   <a href="#faq">Вопросы</a>
-  <a href="tel:+79191225271" class="nav__phone" style="display:block;font-size:20px;padding:16px 0;">+7 919 122-52-71</a>
-  <a href="#quiz" class="btn btn--primary btn--lg">Рассчитать пол</a>
+  <a href="tel:+79191225271" class="nav__phone nav__phone--mob">+7 919 122-52-71 <small>Наталья, менеджер</small></a>
+  <a href="#quiz" class="btn btn--primary btn--lg">Подобрать пол</a>
 </div>
 
 <!-- ============ HERO ============ -->
@@ -401,19 +403,24 @@
 <section class="section" id="quiz">
   <div class="container">
     <div class="sec-head">
-      <span class="eyebrow">Калькулятор</span>
-      <h2 class="h-sec reveal">Узнайте стоимость пола за 1 минуту</h2>
-      <p class="lead reveal" data-d="1">Ответьте на 4 вопроса. Покажем ориентир по цене сразу и пришлём точную смету после бесплатного выезда инженера.</p>
+      <span class="eyebrow">Подбор системы</span>
+      <h2 class="h-sec reveal">Подберём систему и посчитаем смету</h2>
+      <p class="lead reveal" data-d="1">Ответьте на 4 вопроса — инженер получит вводные по объекту, приедет на бесплатную диагностику и пришлёт смету по слоям.</p>
     </div>
 
     <div class="quiz reveal" data-d="1">
       <div class="quiz__side">
-        <h3>Предварительный расчёт по вашему объекту</h3>
-        <p>Это ориентир по рыночным ценам. Финальная смета зависит от состояния основания, которое мы проверим приборами на выезде.</p>
-        <div class="quiz__est">
-          <div class="label">Ориентир стоимости</div>
-          <div class="val" id="estVal"><small>укажите параметры объекта</small></div>
-          <div class="hint" id="estHint">Выберите параметры объекта, чтобы увидеть расчёт.</div>
+        <h3>Смету считаем под объект, а не по прайсу</h3>
+        <p>Цена зависит от состояния основания, нагрузки и режима мойки. Мы проверяем основание приборами на выезде и только потом называем сумму — чтобы она не выросла по ходу работ.</p>
+        <ul class="quiz__list">
+          <li>Выезд инженера и приборная диагностика — бесплатно</li>
+          <li>Смета фиксируется в договоре отдельным пунктом</li>
+          <li>Работаем захватками, производство не останавливается</li>
+        </ul>
+        <div class="quiz__mgr">
+          <span>Не хотите заполнять? Позвоните</span>
+          <a href="tel:+79191225271">+7 919 122-52-71</a>
+          <small>Наталья, менеджер · Пн–Сб, 9:00–20:00</small>
         </div>
       </div>
 
@@ -500,15 +507,16 @@
               <span class="field__hint">Необязательно, но помогает точнее посчитать смету.</span>
             </div>
             <div class="field">
-              <label for="qFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+              <label for="qFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
               <label class="filedrop" for="qFiles">
-                <input type="file" id="qFiles" accept="image/*,video/*" multiple>
+                <input type="file" id="qFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                <span class="filedrop__text">Прикрепить фото или видео</span>
-                <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ. Так инженер увидит основание заранее.</span>
+                <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
+                <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
               </label>
               <ul class="filelist" id="qFileList"></ul>
               <p class="filelist__err" id="qFileErr" hidden></p>
+              <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
             </div>
             <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
             <p class="form-err" id="qErr" hidden></p>
@@ -519,7 +527,7 @@
             <div class="quiz__done">
               <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
               <h4>Заявка принята</h4>
-              <p>Инженер свяжется с вами в течение рабочего дня. Ориентир по стоимости вы видите слева.</p>
+              <p>Наталья свяжется с вами в течение рабочего дня, уточнит детали и согласует выезд инженера.</p>
             </div>
           </div>
 
@@ -579,9 +587,9 @@
           <p>Выезд инженера и приборная диагностика основания бесплатно. Дальше точная смета, которая не изменится после подписания.</p>
         </div>
         <div class="actions">
-          <a href="#quiz" class="btn btn--light btn--lg btn--block">Рассчитать стоимость</a>
+          <a href="#quiz" class="btn btn--light btn--lg btn--block">Оставить заявку</a>
           <a href="tel:+79191225271" class="phone">+7 919 122-52-71</a>
-          <small>Звоните с 9:00 до 20:00, без выходных</small>
+          <small>Наталья, менеджер · с 9:00 до 20:00, без выходных</small>
           <div class="msgs msgs--dark">
             <span class="msgs__label">Или напишите в мессенджер</span>
             <div class="msgs__row">
@@ -630,6 +638,7 @@
       </div>
       <div class="footer__contacts">
         <h5>Контакты</h5>
+        <span>Наталья, менеджер</span>
         <a href="tel:+79191225271">+7 919 122-52-71</a>
         <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>
         <div class="msgs msgs--dark">
@@ -695,15 +704,16 @@
         <textarea id="lmComment" rows="3" placeholder="Тип объекта, площадь, сроки, что сейчас с полом"></textarea>
       </div>
       <div class="field">
-        <label for="lmFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+        <label for="lmFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
         <label class="filedrop" for="lmFiles">
-          <input type="file" id="lmFiles" accept="image/*,video/*" multiple>
+          <input type="file" id="lmFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          <span class="filedrop__text">Прикрепить фото или видео</span>
-          <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ</span>
+          <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
+          <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
         </label>
         <ul class="filelist" id="lmFileList"></ul>
         <p class="filelist__err" id="lmFileErr" hidden></p>
+        <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
       </div>
       <button type="submit" class="btn btn--primary btn--lg btn--block" id="lmSubmit">Отправить заявку</button>
       <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
@@ -742,6 +752,7 @@
           <h4>Нужен такой пол на вашем объекте?</h4>
           <p>Оставьте контакты — инженер приедет, проверит основание приборами и пришлёт смету по слоям. Выезд и диагностика бесплатно.</p>
           <a href="tel:+79191225271" class="gal__phone">+7 919 122-52-71</a>
+          <span class="gal__phone-note">Наталья, менеджер · Пн–Сб, 9:00–20:00</span>
           <div class="msgs">
             <span class="msgs__label">Или напишите в мессенджер</span>
             <div class="msgs__row">
@@ -759,15 +770,16 @@
             <textarea id="galComment" rows="3" placeholder="Тип объекта, площадь, сроки, вопросы"></textarea>
           </div>
           <div class="field">
-            <label for="galFiles">Фото или видео объекта <span class="field__opt">по желанию</span></label>
+            <label for="galFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
             <label class="filedrop" for="galFiles">
-              <input type="file" id="galFiles" accept="image/*,video/*" multiple>
+              <input type="file" id="galFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-              <span class="filedrop__text">Прикрепить фото или видео</span>
-              <span class="filedrop__hint">До 5 файлов, каждый до 45 МБ</span>
+              <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
+              <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
             </label>
             <ul class="filelist" id="galFileList"></ul>
             <p class="filelist__err" id="galFileErr" hidden></p>
+            <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
           </div>
           <button type="submit" class="btn btn--primary btn--lg btn--block" id="galSubmit">Оставить заявку</button>
           <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой обработки персональных данных</a>.</p>
