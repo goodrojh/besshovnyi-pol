@@ -112,8 +112,15 @@
   var promoShown = false;
   var promoTaken = false;
   var PROMO_KEY = 'gks_promo_hidden_until';
+  var PROMO_HIDE_DAYS = 3; // на сколько дней плашка скрывается после закрытия
+
+  // Открытый с ?promo=1 адрес сбрасывает эту паузу и показывает плашку сразу —
+  // чтобы проверить акцию, не очищая данные сайта в браузере.
+  var promoForced = /[?&]promo=1(&|$)/.test(location.search);
+  if (promoForced) { try { localStorage.removeItem(PROMO_KEY); } catch (e) {} }
 
   function promoSuppressed() {
+    if (promoForced) return false;
     try {
       var until = parseInt(localStorage.getItem(PROMO_KEY) || '0', 10);
       return until > Date.now();
@@ -137,7 +144,7 @@
 
   if (promo) {
     // показываем, когда посетитель прокрутил треть страницы или провёл на сайте 15 секунд
-    setTimeout(showPromo, 15000);
+    if (promoForced) showPromo(); else setTimeout(showPromo, 15000);
     window.addEventListener('scroll', function () {
       var h = document.documentElement.scrollHeight - window.innerHeight;
       if (h > 0 && (window.scrollY || document.documentElement.scrollTop) / h > 0.3) showPromo();
@@ -149,7 +156,7 @@
   if (promoClose) promoClose.addEventListener('click', function () { suppressPromo(3); hidePromo(); });
   if (promoCta) promoCta.addEventListener('click', function () {
     promoTaken = true;
-    suppressPromo(3);
+    suppressPromo(PROMO_HIDE_DAYS);
     hidePromo();
     var q = document.getElementById('quiz');
     if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
