@@ -516,8 +516,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .footer__contacts a { display: block; color: #eaf0f5; font-weight: 600; font-size: 17px; margin-bottom: 8px; letter-spacing: -.01em; }
 .footer__contacts span { font-size: 14px; display: block; margin-bottom: 4px; }
 .footer__bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; padding-top: 26px; font-size: 13px; color: #5e7184; }
-.footer__made a { color: #9fb1c0; font-weight: 600; border-bottom: 1px solid rgba(159,177,192,.35); transition: color .2s, border-color .2s; }
-.footer__made a:hover { color: #fff; border-color: #fff; }
+.footer__made a, .footer__bottom a { color: #9fb1c0; font-weight: 600; border-bottom: 1px solid rgba(159,177,192,.35); transition: color .2s, border-color .2s; }
+.footer__made a:hover, .footer__bottom a:hover { color: #fff; border-color: #fff; }
 
 /* ---------- Reveal animation ---------- */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
@@ -542,6 +542,35 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ---------- Form error ---------- */
 .form-err { margin-top: 12px; font-size: 14px; line-height: 1.5; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 12px; padding: 10px 12px; }
 .form-err a { color: #912018; font-weight: 600; text-decoration: underline; }
+
+/* ---------- Текстовая страница (политика) ----------
+   ВНИМАНИЕ: класс .doc уже занят карточкой договора в блоке гарантии,
+   поэтому страница называется .legal — не переименовывать обратно. */
+.legal { padding-block: clamp(110px, 12vw, 150px) clamp(60px, 7vw, 90px); background: var(--bg); }
+.legal__inner { max-width: 800px; }
+.legal__back {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600;
+  color: var(--ink-2); margin-bottom: 26px; transition: color .2s;
+}
+.legal__back:hover { color: var(--accent-2); }
+.legal__back svg { width: 17px; height: 17px; }
+.legal h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 700; letter-spacing: -.025em; line-height: 1.1; }
+.legal__meta { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-top: 14px; }
+.legal h2 {
+  font-size: clamp(19px, 2vw, 23px); font-weight: 700; letter-spacing: -.02em;
+  margin-top: 42px; margin-bottom: 14px; padding-top: 26px; border-top: 1px solid var(--line);
+}
+.legal p { font-size: 16px; line-height: 1.65; color: var(--ink-2); margin-top: 13px; }
+.legal p b, .legal li b { color: var(--ink); font-weight: 600; }
+.legal ul { margin-top: 14px; display: grid; gap: 10px; padding-left: 0; list-style: none; }
+.legal li { position: relative; padding-left: 26px; font-size: 16px; line-height: 1.6; color: var(--ink-2); }
+.legal li::before {
+  content: ""; position: absolute; left: 6px; top: 11px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--accent);
+}
+.legal a:not(.btn):not(.legal__back) { color: var(--accent-2); font-weight: 600; border-bottom: 1px solid rgba(31,95,212,.3); }
+.legal a:not(.btn):not(.legal__back):hover { border-color: var(--accent-2); }
+.legal__cta { margin-top: 46px; }
 
 /* ---------- Messenger buttons ---------- */
 .msgs { margin-top: 18px; }
