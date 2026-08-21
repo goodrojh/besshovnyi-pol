@@ -213,7 +213,7 @@
     var body = { _subject: 'Заявка с сайта ГК Сфера', _template: 'table', _captcha: 'false' };
     Object.keys(fields).forEach(function (k) { body[k] = fields[k]; });
     fetch(LEAD_URL, {
-      method: 'POST',
+      method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body)
     }).then(function (r) {
@@ -250,7 +250,7 @@
     };
     if (TG_THREAD_ID) payload.message_thread_id = TG_THREAD_ID;
     fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
-      method: 'POST',
+      method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(function (r) { return r.json(); }).then(function (d) {
@@ -309,7 +309,7 @@
   function sendTelegramRetry(fields, done) {
     sendTelegram(fields, function (err) {
       if (!err) { done(null); return; }
-      setTimeout(function () { sendTelegram(fields, done); }, 1200);
+      setTimeout(function () { sendTelegram(fields, done); }, 600);
     });
   }
 
@@ -329,10 +329,17 @@
         if (TG_TOKEN && TG_CHAT_ID) {
           mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
         }
-        sendLead(mail, function (mailErr) {
-          if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
-          done(mailErr || tgErr);
-        });
+        var done_ = false;
+        function finish(err) {
+          if (done_) return;
+          done_ = true;
+          if (!err) rememberLead(fields, files.length);
+          done(err);
+        }
+        // Письмо помечено keepalive и дойдёт, даже когда страница уже сменилась
+        sendLead(mail, function (mailErr) { finish(mailErr && tgErr ? mailErr : null); });
+        // Telegram принял — не держим человека лишние секунды на форме
+        if (!tgErr) finish(null);
       });
     });
   }
