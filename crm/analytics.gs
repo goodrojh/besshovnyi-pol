@@ -1,0 +1,357 @@
+/**
+ * ГК Сфера — вторая часть кода CRM: аналитика и Авито.
+ * Лежит отдельным файлом, чтобы вставлять по частям.
+ * Работает вместе с Код.gs — функции видят друг друга.
+ */
+/* ============================================================
+   АНАЛИТИКА
+   Один запрос считает всё окно целиком: воронку, скорость,
+   деньги, источники, менеджеров. Считаем по заявкам, созданным
+   внутри периода, — так цифры сходятся с рекламными расходами.
+   ============================================================ */
+
+function apiStats(range) {
+  guard_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_LEADS);
+
+  var out = {
+    totals:   { leads: 0, deals: 0, lost: 0, open: 0, revenue: 0, avgCheck: 0,
+                target: 0, nonTarget: 0, unmarked: 0 },
+    funnel:   [],
+    speed:    { touched: 0, avgMin: 0, in15: 0, in60: 0, untouched: 0 },
+    cycle:    { deals: 0, avgDays: 0 },
+    stale:    { d2: 0, d7: 0 },
+    dow:      [], hours: [],
+    reasons:  [], sources: [], utm: [], managers: [],
+    area:     { inWork: 0, avg: 0 },
+    spendKnown: false
+  };
+  if (!sh || sh.getLastRow() < 2) return out;
+
+  var from = (range && range.from) ? new Date(range.from + 'T00:00:00') : null;
+  var to   = (range && range.to)   ? new Date(range.to   + 'T23:59:59') : null;
+  var now = new Date();
+
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
+
+  var bySource = {}, byUtm = {}, byManager = {}, byReason = {};
+  var dow = [0, 0, 0, 0, 0, 0, 0], hours = [];
+  for (var h = 0; h < 24; h++) hours.push(0);
+
+  var reachedCount = {};
+  FUNNEL.forEach(function (st) { reachedCount[st] = 0; });
+
+  var speedSum = 0, cycleSum = 0, areaSum = 0, areaN = 0;
+
+  rows.forEach(function (r) {
+    var o = rowToObj_(r);
+    var created = o['Создана'];
+    if (!(created instanceof Date)) return;
+    if (from && created < from) return;
+    if (to && created > to) return;
+
+    var status  = String(o['Статус'] || '');
+    var isDeal  = status === 'Договор';
+    var isLost  = status === 'Отказ';
+    var money   = Number(o['Сумма, ₽']) || 0;
+    var srcKey  = String(o['Источник'] || 'без источника');
+    var utmKey  = String(o['utm_source'] || '—');
+    var manKey  = String(o['Ответственный'] || 'не назначен');
+
+    out.totals.leads++;
+    if (isDeal) { out.totals.deals++; out.totals.revenue += money; }
+    else if (isLost) out.totals.lost++;
+    else out.totals.open++;
+
+    var mark = String(o['Целевая'] || '');
+    if (mark === 'Нет') out.totals.nonTarget++;
+    else if (mark === 'Да') out.totals.target++;
+    else out.totals.unmarked++;
+
+    // ---- воронка: самый дальний достигнутый этап
+    var reached = Math.max(FUNNEL.indexOf(String(o['Дошёл до'] || '')),
+                           FUNNEL.indexOf(status), 0);
+    for (var i = 0; i <= reached; i++) reachedCount[FUNNEL[i]]++;
+
+    // ---- скорость первого касания
+    var ft = o['Первый контакт'];
+    if (ft instanceof Date) {
+      var min = (ft - created) / 60000;
+      if (min >= 0) {
+        out.speed.touched++;
+        speedSum += min;
+        if (min <= 15) out.speed.in15++;
+        if (min <= 60) out.speed.in60++;
+      }
+    } else if (!isDeal && !isLost) {
+      out.speed.untouched++;
+    }
+
+    // ---- цикл сделки
+    var signed = o['Договор от'];
+    if (isDeal && signed instanceof Date) {
+      cycleSum += (signed - created) / 86400000;
+      out.cycle.deals++;
+    }
+
+    // ---- заявки без движения
+    if (!isDeal && !isLost) {
+      var last = (o['Обновлена'] instanceof Date) ? o['Обновлена'] : created;
+      var days = (now - last) / 86400000;
+      if (days >= 7) out.stale.d7++;
+      else if (days >= 2) out.stale.d2++;
+    }
+
+    // ---- когда приходят заявки
+    dow[created.getDay()]++;
+    hours[created.getHours()]++;
+
+    // ---- причины отказа
+    if (isLost) {
+      var why = String(o['Причина отказа'] || 'не указана');
+      byReason[why] = (byReason[why] || 0) + 1;
+    }
+
+    // ---- площадь
+    var area = Number(String(o['Площадь, м²']).replace(/[^\d.]/g, '')) || 0;
+    if (area) { areaSum += area; areaN++; }
+    if (area && !isDeal && !isLost) out.area.inWork += area;
+
+    function bump(box, key) {
+      var b = box[key] || (box[key] = { key: key, leads: 0, deals: 0, revenue: 0, lost: 0 });
+      b.leads++;
+      if (isDeal) { b.deals++; b.revenue += money; }
+      if (isLost) b.lost++;
+    }
+    bump(bySource, srcKey);
+    bump(byUtm, utmKey);
+    bump(byManager, manKey);
+  });
+
+  // ---- воронка с конверсиями между шагами
+  var prev = 0;
+  FUNNEL.forEach(function (st, i) {
+    var n = reachedCount[st];
+    out.funnel.push({
+      stage: st, count: n,
+      fromPrev: (i === 0 || !prev) ? null : Math.round(n / prev * 1000) / 10,
+      fromStart: (!reachedCount[FUNNEL[0]]) ? null
+                 : Math.round(n / reachedCount[FUNNEL[0]] * 1000) / 10
+    });
+    prev = n;
+  });
+
+  if (out.speed.touched) out.speed.avgMin = Math.round(speedSum / out.speed.touched);
+  if (out.cycle.deals)   out.cycle.avgDays = Math.round(cycleSum / out.cycle.deals * 10) / 10;
+  if (out.totals.deals)  out.totals.avgCheck = Math.round(out.totals.revenue / out.totals.deals);
+  if (areaN)             out.area.avg = Math.round(areaSum / areaN);
+
+  // ---- дни недели и часы
+  var dowNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  var order = [1, 2, 3, 4, 5, 6, 0];
+  order.forEach(function (d) { out.dow.push({ label: dowNames[d], n: dow[d] }); });
+  for (var k = 0; k < 24; k++) out.hours.push({ label: (k < 10 ? '0' : '') + k, n: hours[k] });
+
+  out.reasons = Object.keys(byReason).map(function (k) { return { reason: k, n: byReason[k] }; })
+                  .sort(function (a, b) { return b.n - a.n; });
+
+  // ---- расходы на рекламу
+  var spend = spendBySource_(from, to);
+  out.spendKnown = spend.total > 0;
+
+  function pack(box, withSpend) {
+    return Object.keys(box).map(function (k) {
+      var b = box[k];
+      var o2 = {
+        key: k, leads: b.leads, deals: b.deals, lost: b.lost, revenue: b.revenue,
+        conv: b.leads ? Math.round(b.deals / b.leads * 1000) / 10 : 0
+      };
+      if (withSpend) {
+        var sp = spend.by[k] || 0;
+        o2.spend = sp;
+        o2.cpl = sp && b.leads ? Math.round(sp / b.leads) : 0;
+        o2.cpa = sp && b.deals ? Math.round(sp / b.deals) : 0;
+        o2.romi = sp ? Math.round((b.revenue - sp) / sp * 100) : null;
+        o2.drr = b.revenue ? Math.round(sp / b.revenue * 1000) / 10 : null;
+      }
+      return o2;
+    }).sort(function (a, b) { return b.leads - a.leads; });
+  }
+
+  out.sources = pack(bySource, true);
+  out.utm = pack(byUtm, false);
+  out.managers = pack(byManager, false);
+  out.spendTotal = spend.total;
+  out.romiTotal = spend.total ? Math.round((out.totals.revenue - spend.total) / spend.total * 100) : null;
+  out.cplTotal = (spend.total && out.totals.leads) ? Math.round(spend.total / out.totals.leads) : 0;
+
+  return out;
+}
+
+/** Рекламные траты за период, разложенные по источникам. */
+function spendBySource_(from, to) {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SPEND);
+  var res = { by: {}, total: 0 };
+  if (!sh || sh.getLastRow() < 2) return res;
+
+  sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(function (r) {
+    var d = (r[0] instanceof Date) ? r[0] : parseDate_(r[0]);
+    if (!d) return;
+    if (from && d < from) return;
+    if (to && d > to) return;
+    var src = String(r[1] || 'без источника');
+    var sum = Number(r[2]) || 0;
+    if (!sum) return;
+    res.by[src] = (res.by[src] || 0) + sum;
+    res.total += sum;
+  });
+  return res;
+}
+
+
+/* ============================================================
+   АВИТО
+   Ключи лежат в свойствах скрипта: AVITO_CLIENT_ID и AVITO_CLIENT_SECRET.
+   В код их не вписываем — репозиторий сайта открытый.
+   ============================================================ */
+
+function avitoToken_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('avito_token');
+  if (hit) return hit;
+
+  var p = PropertiesService.getScriptProperties();
+  var id = p.getProperty('AVITO_CLIENT_ID');
+  var secret = p.getProperty('AVITO_CLIENT_SECRET');
+  if (!id || !secret) throw new Error('Не заданы AVITO_CLIENT_ID и AVITO_CLIENT_SECRET в свойствах скрипта.');
+
+  var res = UrlFetchApp.fetch('https://api.avito.ru/token/', {
+    method: 'post',
+    contentType: 'application/x-www-form-urlencoded',
+    payload: { grant_type: 'client_credentials', client_id: id, client_secret: secret },
+    muteHttpExceptions: true
+  });
+  var body = res.getContentText();
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Авито не выдал токен (' + res.getResponseCode() + '): ' + body);
+  }
+  var data = JSON.parse(body);
+  if (!data.access_token) throw new Error('В ответе Авито нет access_token: ' + body);
+
+  // токен живёт около суток, держим в кэше час — дольше кэш не хранит
+  cache.put('avito_token', data.access_token, 3000);
+  return data.access_token;
+}
+
+function avitoGet_(path) {
+  var res = UrlFetchApp.fetch('https://api.avito.ru' + path, {
+    method: 'get',
+    headers: { Authorization: 'Bearer ' + avitoToken_() },
+    muteHttpExceptions: true
+  });
+  return { code: res.getResponseCode(), text: res.getContentText() };
+}
+
+/**
+ * Проверка связи. Показывает, что именно ответил Авито, —
+ * по этому ответу настраивается всё остальное.
+ */
+function avitoTest() {
+  var lines = [];
+  try {
+    avitoToken_();
+    lines.push('Токен получен — ключи рабочие.');
+  } catch (e) {
+    return 'Не получилось: ' + e.message;
+  }
+
+  var self = avitoGet_('/core/v1/accounts/self');
+  lines.push('');
+  lines.push('Профиль (' + self.code + '): ' + self.text.slice(0, 400));
+
+  var id = '';
+  try { id = String(JSON.parse(self.text).id || ''); } catch (e) {}
+
+  if (id) {
+    var chats = avitoGet_('/messenger/v2/accounts/' + id + '/chats?limit=3');
+    lines.push('');
+    lines.push('Мессенджер (' + chats.code + '): ' + chats.text.slice(0, 800));
+    if (chats.code === 403) {
+      lines.push('');
+      lines.push('403 значит, что доступ к переписке для этих ключей не открыт — ' +
+                 'его запрашивают отдельно в кабинете Авито.');
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Забирает обращения из мессенджера Авито и заводит новые как заявки.
+ * Чат, который уже переносили, второй раз не заводится — список
+ * перенесённых лежит на листе «Авито».
+ */
+function avitoPull() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var self = avitoGet_('/core/v1/accounts/self');
+  if (self.code !== 200) return 'Авито не отдал профиль (' + self.code + '): ' + self.text.slice(0, 300);
+
+  var accountId = String(JSON.parse(self.text).id || '');
+  if (!accountId) return 'В ответе Авито нет id аккаунта.';
+
+  var chats = avitoGet_('/messenger/v2/accounts/' + accountId + '/chats?limit=100');
+  if (chats.code !== 200) {
+    return 'Переписка недоступна (' + chats.code + '): ' + chats.text.slice(0, 300) +
+           '\n\nСкорее всего, доступ к мессенджеру не открыт для этих ключей.';
+  }
+
+  var list = [];
+  try { list = JSON.parse(chats.text).chats || []; } catch (e) { return 'Не разобрал ответ Авито: ' + chats.text.slice(0, 300); }
+
+  var seenSheet = ss.getSheetByName(SHEET_AVITO);
+  if (!seenSheet) {
+    seenSheet = ss.insertSheet(SHEET_AVITO);
+    seenSheet.getRange(1, 1, 1, 4).setValues([['Чат', 'Заявка', 'Клиент', 'Перенесён']])
+      .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
+    seenSheet.setFrozenRows(1);
+    seenSheet.hideSheet();
+  }
+  var seen = {};
+  if (seenSheet.getLastRow() > 1) {
+    seenSheet.getRange(2, 1, seenSheet.getLastRow() - 1, 1).getValues()
+      .forEach(function (r) { seen[String(r[0])] = true; });
+  }
+
+  var added = 0;
+  list.forEach(function (chat) {
+    var chatId = String(chat.id || '');
+    if (!chatId || seen[chatId]) return;
+
+    var name = '';
+    (chat.users || []).forEach(function (u) {
+      if (String(u.id) !== accountId && !name) name = String(u.name || '');
+    });
+
+    var text = '';
+    try { text = String(chat.last_message.content.text || ''); } catch (e) {}
+
+    var about = '';
+    try { about = String(chat.context.value.title || ''); } catch (e) {}
+
+    var lead = saveLeadRow_({
+      'Источник': 'Авито',
+      'Имя': name || 'Клиент с Авито',
+      'Телефон': '',
+      'Комментарий клиента': text,
+      'Интересует': about,
+      'Файлы': 'https://www.avito.ru/profile/messenger/channel/' + chatId,
+      'utm_source': 'avito'
+    });
+
+    seenSheet.appendRow([chatId, lead['ID'], name, new Date()]);
+    notifyTelegram_(leadToTelegram_(lead));
+    added++;
+  });
+
+  return 'Обращений с Авито перенесено: ' + added + '\nВсего чатов в ответе: ' + list.length;
+}
