@@ -21,11 +21,10 @@ function doGet() {
   }
   return HtmlService.createTemplateFromFile('CRM').evaluate()
     .setTitle('CRM — ГК Сфера')
+    // Apps Script принимает только эти метатеги, остальные ломают страницу
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
     .addMetaTag('apple-mobile-web-app-capable', 'yes')
-    .addMetaTag('apple-mobile-web-app-status-bar-style', 'default')
-    .addMetaTag('apple-mobile-web-app-title', 'CRM Сфера')
-    .addMetaTag('theme-color', '#0f1820');
+    .addMetaTag('mobile-web-app-capable', 'yes');
 }
 
 function isAllowed_() {
