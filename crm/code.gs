@@ -52,6 +52,27 @@ var HEADERS = [
 function col_(name) { return HEADERS.indexOf(name) + 1; }
 
 /* ============================================================
+   МЕНЮ В САМОЙ ТАБЛИЦЕ — чтобы не лазить в редактор кода
+   ============================================================ */
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('ГК Сфера')
+    .addItem('Починить телефоны', 'fixPhonesMenu')
+    .addItem('Первичная настройка (один раз)', 'setupMenu')
+    .addToUi();
+}
+
+function fixPhonesMenu() {
+  SpreadsheetApp.getUi().alert(fixPhones());
+}
+
+function setupMenu() {
+  setup();
+  SpreadsheetApp.getUi().alert('Готово: листы и заголовки на месте.');
+}
+
+/* ============================================================
    ПЕРВИЧНАЯ НАСТРОЙКА — запустить один раз вручную
    ============================================================ */
 
@@ -186,7 +207,9 @@ function fixPhones() {
     fixed++;
   }
   rng.setNumberFormat('@');
-  return 'Починено номеров: ' + fixed;
+  var msg = 'Починено номеров: ' + fixed;
+  Logger.log(msg);
+  return msg;
 }
 function nextId_(sh) {
   var last = sh.getLastRow();
