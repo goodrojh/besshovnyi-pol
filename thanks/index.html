@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../styles.css?v=202608211157">
+<link rel="stylesheet" href="../styles.css?v=202608211254">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -56,23 +56,60 @@
       </div>
       <span class="eyebrow">Заявка принята</span>
       <h1>Спасибо! Перезвоним <em>в течение 30 минут</em></h1>
-      <p class="hero__sub">Наталья свяжется с вами в рабочее время, уточнит задачу по объекту и согласует бесплатный выезд инженера с приборами.</p>
+      <p class="hero__sub">Наталья свяжется с вами в рабочее время, уточнит задачу по объекту и согласует бесплатный выезд инженера. Работаем Пн–Сб, 9:00–20:00.</p>
+
+      <div class="recap" id="recap" hidden>
+        <div class="recap__head">
+          <b>Что вы отправили</b>
+          <span>Проверьте номер — по нему будем звонить</span>
+        </div>
+        <dl class="recap__list" id="recapList"></dl>
+        <a href="../index.html?fix=1" class="recap__fix">Есть ошибка? Отправить заявку заново</a>
+      </div>
 
       <div class="thanks__row">
         <a href="tel:+79191225271" class="btn btn--primary btn--lg">Позвонить самому</a>
         <a href="https://t.me/+79191225271" target="_blank" rel="noopener" class="btn btn--ghost btn--lg">Написать в Telegram</a>
       </div>
 
-      <p class="hero__note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-        Работаем <b>Пн–Сб, 9:00–20:00</b>
-      </p>
-
-
       <a href="../index.html" class="thanks__back">← Вернуться на сайт</a>
     </div>
   </div>
 </section>
 
+<script>
+(function () {
+  // Показываем человеку его же заявку: опечатку в номере видно сразу
+  var SKIP = { 'Источник': 1, 'Акция': 1, 'Дублировано в Telegram': 1 };
+  var ORDER = ['Имя', 'Телефон', 'Комментарий', 'Интересует', 'Раздел',
+               'Тип объекта', 'Площадь, м²', 'Нагрузка', 'Основание', 'Приложено файлов'];
+  var memo = null;
+  try { memo = JSON.parse(sessionStorage.getItem('gks_last_lead') || 'null'); } catch (e) {}
+  if (!memo) return;
+
+  var box = document.getElementById('recap');
+  var list = document.getElementById('recapList');
+  var keys = Object.keys(memo);
+  keys.sort(function (a, b) {
+    var ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+
+  var shown = 0;
+  keys.forEach(function (k) {
+    var v = memo[k];
+    if (SKIP[k] || v === '' || v === '—' || v === null || typeof v === 'undefined') return;
+    var dt = document.createElement('dt');
+    dt.textContent = k;
+    var dd = document.createElement('dd');
+    dd.textContent = v;
+    if (k === 'Телефон') dd.className = 'recap__phone';
+    list.appendChild(dt);
+    list.appendChild(dd);
+    shown++;
+  });
+  if (shown) box.hidden = false;
+})();
+</script>
 </body>
 </html>

@@ -846,3 +846,38 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 /* поле, из-за которого не отправилась форма */
 .field--err input, .field--err textarea { border-color: #f04438; }
 .field--err input:focus, .field--err textarea:focus { box-shadow: 0 0 0 4px rgba(240,68,56,.12); }
+
+/* ---------- Сводка отправленной заявки на странице «спасибо» ---------- */
+.recap {
+  margin-top: 24px; padding: 18px 20px; border-radius: var(--r-sm);
+  background: var(--bg-2); border: 1px solid var(--line);
+}
+.recap[hidden] { display: none; }
+.recap__head b { display: block; font-size: 15px; letter-spacing: -.01em; }
+.recap__head span { display: block; font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+.recap__list {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 14.5px;
+}
+.recap__list dt { color: var(--ink-3); white-space: nowrap; }
+.recap__list dd { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.recap__phone { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.recap__fix {
+  display: inline-block; margin-top: 16px; font-size: 14px; font-weight: 600;
+  color: var(--accent-2); border-bottom: 1px solid rgba(31,95,212,.35); transition: color .2s, border-color .2s;
+}
+.recap__fix:hover { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 560px) {
+  .recap__list { grid-template-columns: 1fr; gap: 2px; }
+  .recap__list dd { margin-bottom: 8px; }
+}
+
+/* на странице «спасибо» карточка плотнее — чтобы сводка помещалась на экран */
+.hero__card.thanks { padding: clamp(26px, 3vw, 38px) clamp(24px, 3vw, 40px); }
+.thanks .thanks__check { width: 52px; height: 52px; margin-bottom: 16px; }
+.thanks .thanks__check svg { width: 26px; height: 26px; }
+.thanks .hero__sub { margin-top: 12px; }
+.thanks .recap { margin-top: 20px; padding: 16px 18px; }
+.thanks .thanks__row { margin-top: 20px; }
+.thanks .thanks__back { margin-top: 18px; }

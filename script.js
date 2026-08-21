@@ -186,6 +186,17 @@
      и не делайте админом группы. Если начнётся спам — отзовите токен
      в @BotFather командой /revoke, сайт продолжит слать заявки на почту.
      ============================================================ */
+  // Запоминаем отправленное, чтобы показать это на странице «спасибо»
+  // и дать человеку заметить опечатку в номере. Живёт только во вкладке.
+  var LEAD_MEMO_KEY = 'gks_last_lead';
+  function rememberLead(fields, filesCount) {
+    try {
+      var memo = {};
+      Object.keys(fields).forEach(function (k) { memo[k] = fields[k]; });
+      if (filesCount) memo['Приложено файлов'] = filesCount;
+      sessionStorage.setItem(LEAD_MEMO_KEY, JSON.stringify(memo));
+    } catch (e) {}
+  }
   // после успешной отправки уводим на отдельную страницу — она же цель в Метрике
   var THANKS_URL = 'thanks/';
   function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
@@ -319,7 +330,7 @@
           mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
         }
         sendLead(mail, function (mailErr) {
-          if (!tgErr || !mailErr) { done(null); return; }
+          if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
           done(mailErr || tgErr);
         });
       });
@@ -490,6 +501,22 @@
     var q = document.getElementById('quiz');
     if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   });
+  // Возврат со страницы «спасибо»: открываем форму с прошлыми данными,
+  // чтобы человек поправил опечатку, а не набирал всё заново.
+  if (/[?&]fix=1(&|$)/.test(location.search)) {
+    var memo = null;
+    try { memo = JSON.parse(sessionStorage.getItem(LEAD_MEMO_KEY) || 'null'); } catch (e) {}
+    if (memo) {
+      openLead('Исправленная заявка',
+        'Проверьте данные и отправьте заново',
+        'Мы подставили то, что вы отправили в прошлый раз. Поправьте, что нужно — например номер телефона — и отправьте ещё раз.',
+        'Исправление');
+      if (lmName) lmName.value = memo['Имя'] || '';
+      if (lmPhone) lmPhone.value = memo['Телефон'] || '';
+      if (lmComment) lmComment.value = (memo['Комментарий'] && memo['Комментарий'] !== '—') ? memo['Комментарий'] : '';
+    }
+  }
+
 
   if (leadForm) {
   // Проверяем контакты по отдельности: человек должен видеть, какое поле не так
