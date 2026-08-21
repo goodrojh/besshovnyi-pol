@@ -212,10 +212,17 @@
     if (!window.fetch) { done(new Error('fetch unsupported')); return; }
     var body = { _subject: 'Заявка с сайта ГК Сфера', _template: 'table', _captcha: 'false' };
     Object.keys(fields).forEach(function (k) { body[k] = fields[k]; });
+    // Отправляем как обычную форму, а не JSON: такому запросу не нужен
+    // CORS-предзапрос, поэтому он уходит на один сетевой заход быстрее
+    // и не обрывается, когда страница уже сменилась на «спасибо».
+    var parts = [];
+    Object.keys(body).forEach(function (k) {
+      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(body[k]));
+    });
     fetch(LEAD_URL, {
       method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Accept': 'application/json' },
+      body: parts.join('&')
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
