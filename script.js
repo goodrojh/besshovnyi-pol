@@ -518,7 +518,6 @@
   }
 
 
-  if (leadForm) {
   // Проверяем контакты по отдельности: человек должен видеть, какое поле не так
   function phoneDigits(v) {
     var d = String(v || '').replace(/\D/g, '');
@@ -546,6 +545,7 @@
     }
     return null;
   }
+  if (leadForm) {
     leadForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = lmName.value.trim();
