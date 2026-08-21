@@ -332,7 +332,10 @@
     el.setAttribute('inputmode', 'tel');
     function digitsOf(v) {
       var d = String(v).replace(/\D/g, '');
+      // первая семёрка — это наш префикс «+7», который поле рисует само
       if (d.charAt(0) === '7' || d.charAt(0) === '8') d = d.slice(1);
+      // а это код страны, который человек ввёл или вставил руками
+      while (d.length > 10 && (d.charAt(0) === '7' || d.charAt(0) === '8')) d = d.slice(1);
       return d.slice(0, 10);
     }
     function render(d) {
@@ -489,13 +492,41 @@
   });
 
   if (leadForm) {
+  // Проверяем контакты по отдельности: человек должен видеть, какое поле не так
+  function phoneDigits(v) {
+    var d = String(v || '').replace(/\D/g, '');
+    if (d.charAt(0) === '7' || d.charAt(0) === '8') d = d.slice(1);
+    while (d.length > 10 && (d.charAt(0) === '7' || d.charAt(0) === '8')) d = d.slice(1);
+    return d;
+  }
+  function markField(el, bad) {
+    if (!el || !el.parentNode) return;
+    var f = el.parentNode;
+    while (f && f.classList && !f.classList.contains('field')) f = f.parentNode;
+    if (f && f.classList) f.classList.toggle('field--err', !!bad);
+    if (bad) { try { el.focus(); } catch (e) {} }
+  }
+  function checkContacts(nameEl, phoneEl) {
+    markField(nameEl, false);
+    markField(phoneEl, false);
+    if (!nameEl || nameEl.value.trim().length < 2) {
+      markField(nameEl, true);
+      return 'Напишите, как к вам обращаться.';
+    }
+    if (!phoneEl || phoneDigits(phoneEl.value).length < 10) {
+      markField(phoneEl, true);
+      return 'Введите телефон полностью — 10 цифр после +7.';
+    }
+    return null;
+  }
     leadForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = lmName.value.trim();
       var phone = lmPhone.value.trim();
-      if (name.length < 2 || phone.replace(/\D/g, '').length < 10) {
+      var problem = checkContacts(lmName, lmPhone);
+      if (problem) {
         lmErr.hidden = false;
-        lmErr.textContent = 'Укажите имя и телефон — инженер перезвонит по нему.';
+        lmErr.textContent = problem;
         return;
       }
       lmErr.hidden = true;
@@ -750,9 +781,10 @@
       e.preventDefault();
       var name = galName.value.trim();
       var phone = galPhone.value.trim();
-      if (name.length < 2 || phone.replace(/\D/g, '').length < 10) {
+      var problem = checkContacts(galName, galPhone);
+      if (problem) {
         galErr.hidden = false;
-        galErr.textContent = 'Укажите имя и телефон — инженер перезвонит по нему.';
+        galErr.textContent = problem;
         return;
       }
       galErr.hidden = true;
