@@ -336,17 +336,12 @@
         if (TG_TOKEN && TG_CHAT_ID) {
           mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
         }
-        var done_ = false;
-        function finish(err) {
-          if (done_) return;
-          done_ = true;
-          if (!err) rememberLead(fields, files.length);
-          done(err);
-        }
-        // Письмо помечено keepalive и дойдёт, даже когда страница уже сменилась
-        sendLead(mail, function (mailErr) { finish(mailErr && tgErr ? mailErr : null); });
-        // Telegram принял — не держим человека лишние секунды на форме
-        if (!tgErr) finish(null);
+        // Ответа почты дожидаемся: уход на «спасибо» обрывает запрос,
+        // и keepalive от этого не спасает — проверено на боевом сайте.
+        sendLead(mail, function (mailErr) {
+          if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
+          done(mailErr || tgErr);
+        });
       });
     });
   }
