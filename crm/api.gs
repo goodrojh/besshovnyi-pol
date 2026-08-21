@@ -16,7 +16,11 @@ function doGet() {
   }
   return HtmlService.createTemplateFromFile('CRM').evaluate()
     .setTitle('CRM — ГК Сфера')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
+    .addMetaTag('apple-mobile-web-app-capable', 'yes')
+    .addMetaTag('apple-mobile-web-app-status-bar-style', 'default')
+    .addMetaTag('apple-mobile-web-app-title', 'CRM Сфера')
+    .addMetaTag('theme-color', '#0f1820');
 }
 
 function isAllowed_() {
@@ -53,7 +57,7 @@ function apiList(filter) {
   filter = filter || {};
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var base = { statuses: STATUSES, sources: SOURCES, reasons: REASONS,
-               me: Session.getActiveUser().getEmail() };
+               groups: SOURCE_GROUPS, me: Session.getActiveUser().getEmail() };
   if (!sh || sh.getLastRow() < 2) { base.leads = []; return base; }
 
   var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
@@ -96,6 +100,45 @@ function apiList(filter) {
   base.leads = leads;
   base.counts = counts;
   return base;
+}
+
+/**
+ * План на сегодня: кому обещали позвонить сегодня и кого уже просрочили.
+ * Заявки в статусах «Договор» и «Отказ» не показываем — они закрыты.
+ */
+function apiToday() {
+  guard_();
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
+  var res = { today: [], overdue: [], noPlan: 0 };
+  if (!sh || sh.getLastRow() < 2) return res;
+
+  var start = new Date(); start.setHours(0, 0, 0, 0);
+  var end = new Date();   end.setHours(23, 59, 59, 999);
+
+  var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
+  values.forEach(function (r, i) {
+    var o = rowToObj_(r);
+    if (['Договор', 'Отказ'].indexOf(String(o['Статус'])) !== -1) return;
+
+    var when = o['Следующий контакт'];
+    o.__row = i + 2;
+
+    if (!(when instanceof Date)) {
+      // без даты и без ответа — тоже задача, про неё легко забыть
+      if (!(o['Первый контакт'] instanceof Date)) res.noPlan++;
+      return;
+    }
+    var one = fmtDates_(o);
+    if (when < start) res.overdue.push(one);
+    else if (when <= end) res.today.push(one);
+  });
+
+  function byDate(a, b) {
+    return String(a['Следующий контакт']).localeCompare(String(b['Следующий контакт']));
+  }
+  res.today.sort(byDate);
+  res.overdue.sort(byDate);
+  return res;
 }
 
 /** Сохранение карточки: статус, сумма, дата следующего контакта, ответственный. */

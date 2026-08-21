@@ -24,7 +24,7 @@ function apiStats(range) {
     stale:    { d2: 0, d7: 0 },
     dow:      [], hours: [],
     reasons:  [], sources: [], utm: [], managers: [],
-    area:     { inWork: 0, avg: 0 },
+    area:     { inWork: 0, avg: 0, perM2: 0, perM2Deals: 0 },
     spendKnown: false
   };
   if (!sh || sh.getLastRow() < 2) return out;
@@ -35,7 +35,15 @@ function apiStats(range) {
 
   var rows = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
 
+  // выбранные каналы: пустой список — считаем по всем
+  var pick = null;
+  if (range && range.sources && range.sources.length) {
+    pick = {};
+    range.sources.forEach(function (x) { pick[String(x)] = true; });
+  }
+
   var bySource = {}, byUtm = {}, byManager = {}, byReason = {};
+  var m2Money = 0, m2Area = 0;
   var dow = [0, 0, 0, 0, 0, 0, 0], hours = [];
   for (var h = 0; h < 24; h++) hours.push(0);
 
@@ -50,6 +58,7 @@ function apiStats(range) {
     if (!(created instanceof Date)) return;
     if (from && created < from) return;
     if (to && created > to) return;
+    if (pick && !pick[String(o['Источник'] || '')]) return;
 
     var status  = String(o['Статус'] || '');
     var isDeal  = status === 'Договор';
@@ -113,10 +122,13 @@ function apiStats(range) {
       byReason[why] = (byReason[why] || 0) + 1;
     }
 
-    // ---- площадь
-    var area = Number(String(o['Площадь, м²']).replace(/[^\d.]/g, '')) || 0;
+    // ---- площадь и цена метра
+    var area = areaOf_(o['Площадь, м²']);
     if (area) { areaSum += area; areaN++; }
     if (area && !isDeal && !isLost) out.area.inWork += area;
+
+    // среднюю цену метра считаем только там, где заполнены и сумма, и площадь
+    if (area && money) { m2Money += money; m2Area += area; out.area.perM2Deals++; }
 
     function bump(box, key) {
       var b = box[key] || (box[key] = { key: key, leads: 0, deals: 0, revenue: 0, lost: 0 });
@@ -146,6 +158,7 @@ function apiStats(range) {
   if (out.cycle.deals)   out.cycle.avgDays = Math.round(cycleSum / out.cycle.deals * 10) / 10;
   if (out.totals.deals)  out.totals.avgCheck = Math.round(out.totals.revenue / out.totals.deals);
   if (areaN)             out.area.avg = Math.round(areaSum / areaN);
+  if (m2Area)            out.area.perM2 = Math.round(m2Money / m2Area);
 
   // ---- дни недели и часы
   var dowNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
@@ -157,7 +170,7 @@ function apiStats(range) {
                   .sort(function (a, b) { return b.n - a.n; });
 
   // ---- расходы на рекламу
-  var spend = spendBySource_(from, to);
+  var spend = spendBySource_(from, to, pick);
   out.spendKnown = spend.total > 0;
 
   function pack(box, withSpend) {
@@ -189,8 +202,22 @@ function apiStats(range) {
   return out;
 }
 
+/**
+ * Площадь из ячейки. Встречается «800», «800 м2», «500-1000» —
+ * из диапазона берём середину, из мусора — ноль.
+ */
+function areaOf_(v) {
+  var s = String(v == null ? '' : v).replace(',', '.');
+  var nums = s.match(/\d+(?:\.\d+)?/g);
+  if (!nums || !nums.length) return 0;
+  if (nums.length >= 2 && s.indexOf('-') !== -1) {
+    return (Number(nums[0]) + Number(nums[1])) / 2;
+  }
+  return Number(nums[0]) || 0;
+}
+
 /** Рекламные траты за период, разложенные по источникам. */
-function spendBySource_(from, to) {
+function spendBySource_(from, to, pick) {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SPEND);
   var res = { by: {}, total: 0 };
   if (!sh || sh.getLastRow() < 2) return res;
@@ -201,6 +228,7 @@ function spendBySource_(from, to) {
     if (from && d < from) return;
     if (to && d > to) return;
     var src = String(r[1] || 'без источника');
+    if (pick && !pick[src]) return;
     var sum = Number(r[2]) || 0;
     if (!sum) return;
     res.by[src] = (res.by[src] || 0) + sum;
