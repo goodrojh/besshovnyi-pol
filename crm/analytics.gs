@@ -538,14 +538,7 @@ function avitoBalance() {
   var real = Number(data.real || 0);
   var bonus = Number(data.bonus || 0);
 
-  var sh = makeSitesSheet();
-  var rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
-  var row = 0;
-  rows.forEach(function (r, i) { if (String(r[0]).trim() === 'Авито') row = i + 2; });
-  if (!row) { sh.appendRow(['Авито', '', '']); row = sh.getLastRow(); }
-
-  sh.getRange(row, 2).setValue(real + bonus);
-  sh.getRange(row, 3).setValue(new Date());
+  writeBalance_('Авито', real + bonus);
 
   return 'Остаток на Авито: ' + (real + bonus) + ' ₽' +
          (bonus ? ' (из них бонусов ' + bonus + ')' : '');

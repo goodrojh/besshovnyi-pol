@@ -114,6 +114,12 @@ function onOpen() {
     .addItem('Авито: включить автосбор', 'avitoAutoOnMenu')
     .addItem('Авито: выключить автосбор', 'avitoAutoOffMenu')
     .addSeparator()
+    .addItem('Яндекс: проверить связь', 'yandexTestMenu')
+    .addItem('Яндекс: обновить остаток денег', 'yandexBalanceMenu')
+    .addItem('Яндекс: подтянуть расходы за 30 дней', 'yandexSpendMenu')
+    .addItem('Яндекс: включить автообновление', 'yandexAutoOnMenu')
+    .addItem('Яндекс: выключить автообновление', 'yandexAutoOffMenu')
+    .addSeparator()
     .addItem('Первичная настройка (один раз)', 'setupMenu')
     .addToUi();
 }
@@ -182,6 +188,26 @@ function avitoAutoOnMenu() {
 
 function avitoAutoOffMenu() {
   SpreadsheetApp.getUi().alert(avitoAuto(false));
+}
+
+function yandexTestMenu() {
+  SpreadsheetApp.getUi().alert(yandexTest());
+}
+
+function yandexBalanceMenu() {
+  SpreadsheetApp.getUi().alert(yandexBalance());
+}
+
+function yandexSpendMenu() {
+  SpreadsheetApp.getUi().alert(yandexSpend(30));
+}
+
+function yandexAutoOnMenu() {
+  SpreadsheetApp.getUi().alert(yandexAuto(true));
+}
+
+function yandexAutoOffMenu() {
+  SpreadsheetApp.getUi().alert(yandexAuto(false));
 }
 
 /* ============================================================
