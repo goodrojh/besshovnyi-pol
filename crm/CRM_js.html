@@ -1,0 +1,505 @@
+<script>
+  var STATE = { leads: [], statuses: [], sources: [], groups: [], counts: {}, current: null,
+                tab: '',     // '' — все, 'overdue' — просрочено, иначе название статуса
+                range: {},   // период, выбранный в аналитике
+                pick: [],    // отмеченные галочками источники; пусто — считаем всё
+                day: [] };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.hidden = true; }, 2600);
+  }
+  function busy(on) { document.body.style.cursor = on ? 'progress' : ''; }
+
+  function load() {
+    busy(true);
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false);
+      STATE.leads = res.leads; STATE.statuses = res.statuses;
+      STATE.sources = res.sources; STATE.counts = res.counts || {};
+      STATE.reasons = res.reasons || [];
+      STATE.groups = res.groups || [];
+      $('who').textContent = res.me || '';
+      fillSelects();
+      renderTabs();
+      render();
+    }).withFailureHandler(function (e) {
+      busy(false);
+      $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
+    }).apiList({
+      q: $('q').value,
+      status: (STATE.tab && STATE.tab !== 'overdue') ? STATE.tab : '',
+      source: $('fSource').value,
+      onlyOverdue: STATE.tab === 'overdue'
+    });
+  }
+
+  function renderTabs() {
+    var items = [{ key: '', label: 'Все' }];
+    STATE.statuses.forEach(function (s) { items.push({ key: s, label: s }); });
+    items.push({ key: 'overdue', label: 'Просрочено', alarm: true });
+
+    $('tabs').innerHTML = items.map(function (it) {
+      var n = STATE.counts[it.key === '' ? '' : it.key];
+      var cls = 'tab' + (STATE.tab === it.key ? ' on' : '') + (it.alarm ? ' alarm' : '');
+      return '<button class="' + cls + '" data-tab="' + esc(it.key) + '">' + esc(it.label) +
+             (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
+    }).join('');
+
+    [].forEach.call($('tabs').querySelectorAll('.tab'), function (b) {
+      b.addEventListener('click', function () {
+        STATE.tab = b.dataset.tab;
+        load();
+      });
+    });
+  }
+
+  var selectsReady = false;
+  function fillSelects() {
+    if (selectsReady) return;
+    selectsReady = true;
+    STATE.statuses.forEach(function (s) {
+      $('cStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+    });
+    STATE.sources.forEach(function (s) {
+      $('fSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+      $('nSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+    });
+    $('cReason').insertAdjacentHTML('beforeend', '<option value="">—</option>');
+    (STATE.reasons || []).forEach(function (s) {
+      $('cReason').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+    });
+    $('nSource').value = 'Telegram';
+  }
+
+  function render() {
+    if (!STATE.leads.length) {
+      $('list').innerHTML = '<div class="empty">Заявок нет. Как только придёт первая — появится здесь.</div>';
+      return;
+    }
+    var rows = STATE.leads.map(function (l, i) {
+      return '<tr class="row' + (l.overdue ? ' overdue' : '') + '" data-i="' + i + '">' +
+        '<td class="nowrap muted" data-label="Создана">' + esc(l['Создана']) + '</td>' +
+        '<td class="head"><b>' + esc(l['Имя'] || '—') + '</b>' +
+          '<div class="muted">' + esc(l['Телефон']) + '</div></td>' +
+        '<td class="hide-sm" data-label="Источник">' + esc(l['Источник']) + '</td>' +
+        '<td class="hide-sm muted" data-label="Запрос">' +
+          esc((l['Комментарий клиента'] || l['Интересует'] || '').slice(0, 70)) + '</td>' +
+        '<td data-label="Статус"><span class="st ' + esc(l['Статус']) + '">' +
+          esc(l['Статус']) + '</span></td>' +
+        '<td class="nowrap' + (l.overdue ? '' : ' muted') + '" data-label="Связаться">' +
+          esc(l['Следующий контакт'] || '—') + '</td>' +
+      '</tr>';
+    }).join('');
+    $('list').innerHTML = '<table><thead><tr>' +
+      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Источник</th>' +
+      '<th class="hide-sm">Запрос</th><th>Статус</th><th>Связаться</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    [].forEach.call(document.querySelectorAll('tr.row'), function (tr) {
+      tr.addEventListener('click', function () { openCard(STATE.leads[+tr.dataset.i]); });
+    });
+  }
+
+  function openCard(l) {
+    STATE.current = l;
+    $('cName').textContent = l['Имя'] || 'Без имени';
+    $('cMeta').textContent = l['ID'] + ' · ' + l['Источник'] + ' · создана ' + l['Создана'];
+    var digits = String(l['Телефон']).replace(/\D/g, '');
+    $('cCall').textContent = l['Телефон'] || '—';
+    $('cCall').href = digits ? 'tel:+' + digits : '#';
+
+    var facts = [];
+    ['Комментарий клиента','Интересует','Тип объекта','Площадь, м²','Нагрузка','Основание',
+     'Файлы','Акция','utm_source','utm_campaign','Страница входа'].forEach(function (k) {
+      if (l[k] !== '' && l[k] != null) facts.push('<div><b>' + esc(k) + '</b><span>' + esc(l[k]) + '</span></div>');
+    });
+    $('cFacts').innerHTML = facts.join('') || '<div class="muted">Дополнительных данных нет</div>';
+
+    $('cStatus').value = l['Статус'] || 'Новая';
+    $('cSum').value = l['Сумма, ₽'] || '';
+    $('cNext').value = l['Следующий контакт'] || '';
+    $('cOwner').value = l['Ответственный'] || '';
+    $('cReason').value = l['Причина отказа'] || '';
+    $('cTarget').value = l['Целевая'] || '';
+    $('cNote').value = '';
+    $('cNotes').textContent = l['Заметки'] || 'Заметок пока нет.';
+    $('cardModal').hidden = false;
+  }
+
+  function applyUpdated(l) {
+    STATE.current = l;
+    $('cNotes').textContent = l['Заметки'] || 'Заметок пока нет.';
+    $('cNote').value = '';
+    load();
+  }
+
+  $('cSave').addEventListener('click', function () {
+    var l = STATE.current; if (!l) return;
+    busy(true); this.disabled = true;
+    var btn = this;
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false); btn.disabled = false; applyUpdated(res); toast('Сохранено');
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiSave({
+      __row: l.__row,
+      'Статус': $('cStatus').value,
+      'Сумма, ₽': $('cSum').value,
+      'Следующий контакт': $('cNext').value,
+      'Ответственный': $('cOwner').value,
+      'Причина отказа': $('cReason').value,
+      'Целевая': $('cTarget').value
+    });
+  });
+
+  $('cAddNote').addEventListener('click', function () {
+    var l = STATE.current; if (!l) return;
+    var txt = $('cNote').value.trim();
+    if (!txt) { toast('Сначала напишите заметку'); return; }
+    busy(true); var btn = this; btn.disabled = true;
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false); btn.disabled = false; applyUpdated(res); toast('Заметка добавлена');
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiAddNote(l.__row, txt);
+  });
+
+  $('nSave').addEventListener('click', function () {
+    var phone = $('nPhone').value.trim();
+    if (!phone.replace(/\D/g, '')) { toast('Нужен телефон'); return; }
+    busy(true); var btn = this; btn.disabled = true;
+    google.script.run.withSuccessHandler(function () {
+      busy(false); btn.disabled = false; $('newModal').hidden = true;
+      ['nName','nPhone','nType','nArea','nComment'].forEach(function (id) { $(id).value = ''; });
+      toast('Заявка создана'); load();
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiCreate({
+      'Имя': $('nName').value.trim(),
+      'Телефон': phone,
+      'Источник': $('nSource').value,
+      'Тип объекта': $('nType').value.trim(),
+      'Площадь, м²': $('nArea').value,
+      'Комментарий клиента': $('nComment').value.trim()
+    });
+  });
+
+  function ymd(d) {
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  function money(n) { return n ? Number(n).toLocaleString('ru-RU') : '—'; }
+  function pct(n) { return (n === null || n === undefined) ? '—' : n + '%'; }
+
+  function kpi(value, label, cls) {
+    return '<div class="kpi' + (cls ? ' ' + cls : '') + '"><b>' + value + '</b><span>' +
+           esc(label) + '</span></div>';
+  }
+
+  function tbl(head, rows) {
+    if (!rows.length) return '<div class="muted" style="font-size:13px">Нет данных.</div>';
+    return '<div class="scroll-x"><table><thead><tr>' +
+      head.map(function (h, i) {
+        return '<th' + (i ? ' class="num"' : '') + '>' + esc(h) + '</th>';
+      }).join('') +
+      '</tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr>' + r.map(function (c, i) {
+          return '<td' + (i ? ' class="num"' : '') + '>' + c + '</td>';
+        }).join('') + '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+
+  function miniChart(items) {
+    var max = 0;
+    items.forEach(function (i) { if (i.n > max) max = i.n; });
+    return '<div class="mini-wrap"><div class="mini">' + items.map(function (i) {
+      var h = max ? Math.round(i.n / max * 100) : 0;
+      return '<div style="height:' + h + '%" title="' + esc(i.label) + ': ' + i.n + '">' +
+             '<span>' + esc(i.label) + '</span></div>';
+    }).join('') + '</div></div>';
+  }
+
+  function renderStats(d) {
+    var t = d.totals;
+    var conv = t.leads ? Math.round(t.deals / t.leads * 1000) / 10 : 0;
+    var html = [];
+
+    // --- главные цифры
+    var cards = [
+      kpi(t.leads, 'заявок за период'),
+      kpi(t.deals, 'договоров', t.deals ? 'good' : ''),
+      kpi(conv + '%', 'конверсия в договор'),
+      kpi(money(t.revenue), 'выручка, ₽'),
+      kpi(money(t.avgCheck), 'средний чек, ₽'),
+      kpi(d.cycle.deals ? d.cycle.avgDays : '—', 'дней от заявки до договора'),
+      kpi(d.speed.touched ? fmtMin(d.speed.avgMin) : '—', 'среднее время первого ответа'),
+      kpi(d.speed.touched ? Math.round(d.speed.in15 / d.speed.touched * 100) + '%' : '—',
+          'ответили за 15 минут'),
+      kpi(d.speed.untouched, 'вообще без ответа', d.speed.untouched ? 'warn' : ''),
+      kpi(d.stale.d7, 'без движения 7+ дней', d.stale.d7 ? 'warn' : ''),
+      kpi(d.stale.d2, 'без движения 2–7 дней'),
+      kpi(money(d.area.inWork), 'м² в работе'),
+      kpi(d.area.perM2 ? money(d.area.perM2) : '—',
+          d.area.perM2Deals ? 'средняя цена м², ₽ (по ' + d.area.perM2Deals + ' карт.)'
+                            : 'средняя цена м², ₽')
+    ];
+    if (d.spendKnown) {
+      cards.push(kpi(money(d.spendTotal), 'расход на рекламу, ₽'));
+      cards.push(kpi(money(d.cplTotal), 'цена заявки, ₽'));
+      cards.push(kpi(pct(d.romiTotal), 'окупаемость рекламы',
+                     d.romiTotal !== null && d.romiTotal < 0 ? 'warn' : 'good'));
+    }
+    html.push('<div class="sect"><div class="kpis">' + cards.join('') + '</div></div>');
+
+    // --- воронка
+    var max = d.funnel.length ? d.funnel[0].count : 0;
+    html.push('<div class="sect"><h3>Воронка</h3><div class="fun">' +
+      d.funnel.map(function (f) {
+        var w = max ? Math.round(f.count / max * 100) : 0;
+        return '<div class="fun-row"><span>' + esc(f.stage) + '</span>' +
+               '<span class="fun-bar"><i style="width:' + w + '%"></i>' +
+               '<em>' + f.count + '</em></span>' +
+               '<span class="muted" style="font-size:12.5px">' +
+               (f.fromPrev === null ? 'старт' : 'с прошлого шага ' + f.fromPrev + '%') +
+               '</span></div>';
+      }).join('') + '</div></div>');
+
+    // --- источники и деньги
+    var srcHead = ['Источник', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'];
+    if (d.spendKnown) srcHead = srcHead.concat(['Расход', 'Цена заявки', 'Цена договора', 'ДРР', 'ROMI']);
+    html.push('<div class="sect"><h3>Источники</h3>' + tbl(srcHead, d.sources.map(function (r) {
+      var row = [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
+      if (d.spendKnown) row = row.concat([money(r.spend), money(r.cpl), money(r.cpa),
+                                          r.drr === null ? '—' : r.drr + '%', pct(r.romi)]);
+      return row;
+    })) + (d.spendKnown ? '' :
+      '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
+      'Цена заявки и окупаемость появятся, когда на листе «Расходы» будут траты на рекламу.</div>') +
+      '</div>');
+
+    // --- реклама по меткам
+    var utm = d.utm.filter(function (r) { return r.key && r.key !== '—'; });
+    if (utm.length) {
+      html.push('<div class="sect"><h3>Рекламные метки (utm_source)</h3>' +
+        tbl(['Метка', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'], utm.map(function (r) {
+          return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
+        })) + '</div>');
+    }
+
+    // --- качество заявок
+    html.push('<div class="sect"><h3>Качество заявок</h3><div class="kpis">' +
+      kpi(t.target, 'целевых') + kpi(t.nonTarget, 'нецелевых', t.nonTarget ? 'warn' : '') +
+      kpi(t.unmarked, 'не размечено') +
+      kpi(t.leads - t.nonTarget ? Math.round(t.deals / (t.leads - t.nonTarget) * 1000) / 10 + '%' : '—',
+          'конверсия без мусора') +
+      '</div></div>');
+
+    // --- отказы
+    if (d.reasons.length) {
+      html.push('<div class="sect"><h3>Почему отказали</h3>' +
+        tbl(['Причина', 'Сколько'], d.reasons.map(function (r) {
+          return [esc(r.reason), r.n];
+        })) + '</div>');
+    }
+
+    // --- менеджеры
+    if (d.managers.length > 1 || (d.managers[0] && d.managers[0].key !== 'не назначен')) {
+      html.push('<div class="sect"><h3>По менеджерам</h3>' +
+        tbl(['Менеджер', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'], d.managers.map(function (r) {
+          return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
+        })) + '</div>');
+    }
+
+    // --- когда приходят заявки
+    html.push('<div class="sect"><h3>Когда приходят заявки</h3>' +
+      '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:6px">По дням недели</div>' +
+      miniChart(d.dow) +
+      '<div style="font-size:12.5px;color:var(--ink-3);margin:14px 0 6px">По часам</div>' +
+      miniChart(d.hours) + '</div>');
+
+    $('sumBody').innerHTML = html.join('');
+  }
+
+  function fmtMin(m) {
+    if (m < 60) return m + ' мин';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + ' ч ' + (m % 60) + ' мин';
+    return Math.round(h / 24) + ' дн';
+  }
+
+  function loadSummary(range) {
+    if (range) STATE.range = range;
+    var req = { from: STATE.range.from || '', to: STATE.range.to || '', sources: STATE.pick };
+    $('sumBody').textContent = 'Считаю…';
+    google.script.run.withSuccessHandler(function (d) {
+      if (!d.totals.leads) {
+        $('sumBody').textContent = STATE.pick.length
+          ? 'По выбранным каналам за этот период заявок нет.'
+          : 'За этот период заявок нет.';
+        return;
+      }
+      renderStats(d);
+    }).withFailureHandler(function (e) {
+      $('sumBody').textContent = 'Ошибка: ' + e.message;
+    }).apiStats(req);
+  }
+
+  /* --- выбор каналов галочками --- */
+  function renderPicks() {
+    var picked = {};
+    STATE.pick.forEach(function (x) { picked[x] = true; });
+
+    $('sPicks').innerHTML = STATE.sources.map(function (src) {
+      var on = !!picked[src];
+      return '<label class="pick' + (on ? ' on' : '') + '">' +
+             '<input type="checkbox" data-src="' + esc(src) + '"' + (on ? ' checked' : '') + '>' +
+             '<span>' + esc(src) + '</span></label>';
+    }).join('');
+
+    [].forEach.call($('sPicks').querySelectorAll('input'), function (box) {
+      box.addEventListener('change', function () {
+        var src = box.dataset.src;
+        var i = STATE.pick.indexOf(src);
+        if (box.checked && i === -1) STATE.pick.push(src);
+        if (!box.checked && i !== -1) STATE.pick.splice(i, 1);
+        renderPicks();
+        loadSummary(null);
+      });
+    });
+
+    var all = !STATE.pick.length;
+    $('sGroups').innerHTML =
+      '<button class="chip' + (all ? ' on' : '') + '" data-group="">Все каналы</button>' +
+      STATE.groups.map(function (g) {
+        var same = g.items.length === STATE.pick.length &&
+                   g.items.every(function (x) { return picked[x]; });
+        return '<button class="chip' + (same ? ' on' : '') + '" data-group="' + esc(g.name) +
+               '">' + esc(g.name) + '</button>';
+      }).join('');
+
+    [].forEach.call($('sGroups').querySelectorAll('[data-group]'), function (b) {
+      b.addEventListener('click', function () {
+        var name = b.dataset.group;
+        if (!name) STATE.pick = [];
+        else {
+          var g = STATE.groups.filter(function (x) { return x.name === name; })[0];
+          STATE.pick = g ? g.items.slice() : [];
+        }
+        renderPicks();
+        loadSummary(null);
+      });
+    });
+  }
+
+  /* --- задачи на сегодня --- */
+  function loadDay() {
+    $('dayBody').textContent = 'Загружаю…';
+    google.script.run.withSuccessHandler(function (res) {
+      STATE.day = res.overdue.concat(res.today);
+      var html = [];
+
+      if (res.overdue.length) {
+        html.push('<div class="day-h warn">Просрочено · ' + res.overdue.length + '</div>');
+        html.push(res.overdue.map(function (l, i) { return taskRow(l, i, true); }).join(''));
+      }
+      html.push('<div class="day-h">Сегодня · ' + res.today.length + '</div>');
+      html.push(res.today.length
+        ? res.today.map(function (l, i) {
+            return taskRow(l, res.overdue.length + i, false);
+          }).join('')
+        : '<div class="muted" style="font-size:13.5px">На сегодня звонков не запланировано.</div>');
+
+      if (res.noPlan) {
+        html.push('<div class="day-h">Без плана</div>' +
+          '<div class="muted" style="font-size:13.5px">' + res.noPlan +
+          ' заявок без ответа и без даты следующего контакта. ' +
+          'Откройте вкладку «Новая» и назначьте им дату.</div>');
+      }
+
+      $('dSub').textContent = 'Просрочено ' + res.overdue.length + ' · на сегодня ' + res.today.length;
+      $('dayBody').innerHTML = html.join('');
+
+      [].forEach.call($('dayBody').querySelectorAll('.task'), function (t) {
+        t.addEventListener('click', function (e) {
+          if (e.target.closest('.tel')) return;   // нажали на трубку — просто звоним
+          $('dayModal').hidden = true;
+          openCard(STATE.day[+t.dataset.i]);
+        });
+      });
+    }).withFailureHandler(function (e) {
+      $('dayBody').textContent = 'Ошибка: ' + e.message;
+    }).apiToday();
+  }
+
+  function taskRow(l, i, late) {
+    var phone = String(l['Телефон'] || '').replace(/[^\d+]/g, '');
+    return '<div class="task' + (late ? ' late' : '') + '" data-i="' + i + '">' +
+      (phone ? '<a class="tel" href="tel:' + esc(phone) + '" title="Позвонить">&#9742;</a>' : '') +
+      '<div><b>' + esc(l['Имя'] || '—') + '</b>' +
+      '<span class="muted">' + esc(l['Телефон'] || 'без телефона') + ' · ' +
+      esc(l['Статус']) + '</span></div>' +
+      '<span class="when">' + esc(l['Следующий контакт'] || '') + '</span></div>';
+  }
+
+
+  function periodRange(p) {
+    var now = new Date();
+    if (p === 'all') return {};
+    if (p === 'month') return { from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to: ymd(now) };
+    var days = Number(p) || 0;
+    var from = new Date(now.getTime() - days * 86400000);
+    return { from: ymd(from), to: ymd(now) };
+  }
+
+  $('sumBtn').addEventListener('click', function () {
+    $('sumModal').hidden = false;
+    var r = periodRange('30');
+    $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
+    renderPicks();
+    loadSummary(r);
+  });
+
+  $('dayBtn').addEventListener('click', function () {
+    $('dayModal').hidden = false;
+    loadDay();
+  });
+  $('dClose').addEventListener('click', function () { $('dayModal').hidden = true; });
+
+  [].forEach.call(document.querySelectorAll('[data-period]'), function (b) {
+    b.addEventListener('click', function () {
+      [].forEach.call(document.querySelectorAll('[data-period]'), function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var r = periodRange(b.dataset.period);
+      $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
+      loadSummary(r);
+    });
+  });
+
+  $('sApply').addEventListener('click', function () {
+    [].forEach.call(document.querySelectorAll('[data-period]'), function (x) { x.classList.remove('on'); });
+    loadSummary({ from: $('sFrom').value, to: $('sTo').value });
+  });
+
+  $('addBtn').addEventListener('click', function () { $('newModal').hidden = false; });
+  $('cClose').addEventListener('click', function () { $('cardModal').hidden = true; });
+  $('nClose').addEventListener('click', function () { $('newModal').hidden = true; });
+  $('sClose').addEventListener('click', function () { $('sumModal').hidden = true; });
+  $('reload').addEventListener('click', load);
+  $('fSource').addEventListener('change', load);
+  var qt;
+  $('q').addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(load, 400); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    ['cardModal','newModal','sumModal','dayModal'].forEach(function (id) { $(id).hidden = true; });
+  });
+  [].forEach.call(document.querySelectorAll('.modal'), function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m) m.hidden = true; });
+  });
+
+  load();
+</script>

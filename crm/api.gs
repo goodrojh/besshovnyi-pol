@@ -7,6 +7,11 @@
    ВЕБ-ИНТЕРФЕЙС
    ============================================================ */
 
+/** Вставка одного html-файла проекта в другой: <?!= include('CRM_css'); ?> */
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
+
 function doGet() {
   if (!isAllowed_()) {
     return HtmlService.createHtmlOutput(
