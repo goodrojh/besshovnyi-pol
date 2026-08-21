@@ -186,6 +186,9 @@
      и не делайте админом группы. Если начнётся спам — отзовите токен
      в @BotFather командой /revoke, сайт продолжит слать заявки на почту.
      ============================================================ */
+  // после успешной отправки уводим на отдельную страницу — она же цель в Метрике
+  var THANKS_URL = 'thanks/';
+  function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
   var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
   var TG_TOKEN = '8603826856:AAGFikvpRmOfoeWyIbzfqwtfoyjJIyJSQlE'; // бот @GKSphere_leads_bot
   var TG_CHAT_ID = '-1004309963490';  // группа «ГК Сфера»
@@ -289,6 +292,16 @@
   }
 
   // Шлём заявку во все каналы разом; принято — если сработал хотя бы один
+  // Telegram шлём первым и с одним повтором: запрос идёт из браузера
+  // посетителя, и на части сетей api.telegram.org недоступен. Итог
+  // доставки подставляем в письмо, чтобы было видно недошедшие заявки.
+  function sendTelegramRetry(fields, done) {
+    sendTelegram(fields, function (err) {
+      if (!err) { done(null); return; }
+      setTimeout(function () { sendTelegram(fields, done); }, 1200);
+    });
+  }
+
   function submitLead(fields, files, onProgress, done) {
     files = files || [];
     var caption = 'Заявка с сайта: ' + (fields['Имя'] || '') + ', ' + (fields['Телефон'] || '');
@@ -301,13 +314,15 @@
             : files.length + ' шт. — передать не удалось, запросите у клиента');
         tg['Файлы от клиента'] = files.length + ' шт. — прикреплены сообщениями выше';
       }
-      var pending = 2, delivered = false, lastErr = null;
-      function step(err) {
-        if (err) { lastErr = err; } else { delivered = true; }
-        if (--pending === 0) done(delivered ? null : (lastErr || new Error('lead failed')));
-      }
-      sendLead(mail, step);
-      sendTelegram(tg, step);
+      sendTelegramRetry(tg, function (tgErr) {
+        if (TG_TOKEN && TG_CHAT_ID) {
+          mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
+        }
+        sendLead(mail, function (mailErr) {
+          if (!tgErr || !mailErr) { done(null); return; }
+          done(mailErr || tgErr);
+        });
+      });
     });
   }
 
@@ -506,6 +521,7 @@
         leadForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = true; });
         if (leadAlt) leadAlt.hidden = true;
         lmOk.hidden = false;
+        goThanks();
         // имя и телефон оставляем, комментарий чистим — он был про другой запрос
         lmComment.value = '';
       });
@@ -761,6 +777,7 @@
         }
         galForm.querySelectorAll('.field, .btn, .consent').forEach(function (el) { el.hidden = true; });
         galOk.hidden = false;
+        goThanks();
       });
     });
   }
@@ -873,6 +890,7 @@
           return;
         }
         showStep(quiz.totalSteps + 1);
+        goThanks();
       });
       return;
     }
