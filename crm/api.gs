@@ -61,19 +61,23 @@ function apiList(filter) {
   filter = filter || {};
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var base = { statuses: STATUSES, sources: SOURCES, reasons: REASONS,
-               groups: SOURCE_GROUPS, me: Session.getActiveUser().getEmail() };
+               groups: SOURCE_GROUPS, platforms: platformNames_(),
+               me: Session.getActiveUser().getEmail() };
   if (!sh || sh.getLastRow() < 2) { base.leads = []; return base; }
 
   var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
   var q = String(filter.q || '').toLowerCase().trim();
   var today = new Date(); today.setHours(23, 59, 59, 999);
 
+  var dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+
   var leads = values.map(function (r, i) {
     var o = rowToObj_(r);
     o.__row = i + 2;
-    o.overdue = (o['Следующий контакт'] instanceof Date) &&
-                o['Следующий контакт'] <= today &&
-                ['Договор', 'Отказ'].indexOf(o['Статус']) === -1;
+    var when = o['Следующий контакт'];
+    var open = ['Договор', 'Отказ'].indexOf(o['Статус']) === -1;
+    o.overdue = (when instanceof Date) && when <= today && open;
+    o.istoday = (when instanceof Date) && when >= dayStart && when <= today && open;
     return o;
   }).filter(function (o) {
     // фильтры, общие для всех вкладок — по ним же считаются счётчики
@@ -87,14 +91,16 @@ function apiList(filter) {
   });
 
   // счётчики для вкладок: сколько заявок в каждом статусе
-  var counts = { '': leads.length, 'overdue': 0 };
+  var counts = { '': leads.length, 'overdue': 0, 'today': 0 };
   STATUSES.forEach(function (s) { counts[s] = 0; });
   leads.forEach(function (o) {
     if (counts[o['Статус']] !== undefined) counts[o['Статус']]++;
     if (o.overdue) counts.overdue++;
+    if (o.istoday) counts.today++;
   });
 
   leads = leads.filter(function (o) {
+    if (filter.onlyToday) return o.istoday;
     if (filter.onlyOverdue) return o.overdue;
     if (filter.status) return o['Статус'] === filter.status;
     return true;
@@ -155,7 +161,8 @@ function apiSave(patch) {
   var changes = [];
   markFirstTouch_(sh, row);
 
-  ['Статус', 'Источник', 'Сумма, ₽', 'Ответственный', 'Причина отказа', 'Целевая'].forEach(function (h) {
+  ['Статус', 'Источник', 'Сумма, ₽', 'Ответственный', 'Причина отказа', 'Целевая',
+   'Адрес объекта'].forEach(function (h) {
     if (patch[h] === undefined) return;
     var c = col_(h);
     var was = sh.getRange(row, c).getValue();

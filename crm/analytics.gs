@@ -23,7 +23,8 @@ function apiStats(range) {
     cycle:    { deals: 0, avgDays: 0 },
     stale:    { d2: 0, d7: 0 },
     dow:      [], hours: [],
-    reasons:  [], sources: [], utm: [], managers: [],
+    reasons:  [], sources: [], utm: [], managers: [], ads: [],
+    adsTotal: { balance: 0, spend: 0, leads: 0, deals: 0, revenue: 0, cpl: 0, cpa: 0, romi: null },
     area:     { inWork: 0, avg: 0, perM2: 0, perM2Deals: 0 },
     spendKnown: false
   };
@@ -42,7 +43,7 @@ function apiStats(range) {
     range.sources.forEach(function (x) { pick[String(x)] = true; });
   }
 
-  var bySource = {}, byUtm = {}, byManager = {}, byReason = {};
+  var bySource = {}, byUtm = {}, byManager = {}, byReason = {}, byPlatform = {};
   var m2Money = 0, m2Area = 0;
   var dow = [0, 0, 0, 0, 0, 0, 0], hours = [];
   for (var h = 0; h < 24; h++) hours.push(0);
@@ -59,6 +60,9 @@ function apiStats(range) {
     if (from && created < from) return;
     if (to && created > to) return;
     if (pick && !pick[String(o['Источник'] || '')]) return;
+
+    var platform = platformOf_(o);
+    if (range && range.platform && platform !== range.platform) return;
 
     var status  = String(o['Статус'] || '');
     var isDeal  = status === 'Договор';
@@ -139,6 +143,7 @@ function apiStats(range) {
     bump(bySource, srcKey);
     bump(byUtm, utmKey);
     bump(byManager, manKey);
+    bump(byPlatform, platform);
   });
 
   // ---- воронка с конверсиями между шагами
@@ -192,6 +197,37 @@ function apiStats(range) {
     }).sort(function (a, b) { return b.leads - a.leads; });
   }
 
+  // ---- рекламные площадки: остаток, расход, цена заявки
+  var balances = adBalances_();
+  var spendPlat = spendByPlatform_(from, to);
+  var seen = {};
+  Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
+  Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
+  Object.keys(balances).forEach(function (k) { seen[k] = true; });
+
+  out.ads = Object.keys(seen).map(function (name) {
+    var b = byPlatform[name] || { leads: 0, deals: 0, revenue: 0 };
+    var sp = spendPlat.by[name] || 0;
+    return {
+      platform: name,
+      balance: balances[name] === undefined ? null : balances[name],
+      spend: sp,
+      leads: b.leads, deals: b.deals, revenue: b.revenue,
+      cpl: (sp && b.leads) ? Math.round(sp / b.leads) : 0,
+      cpa: (sp && b.deals) ? Math.round(sp / b.deals) : 0,
+      romi: sp ? Math.round((b.revenue - sp) / sp * 100) : null
+    };
+  }).sort(function (a, b) { return b.spend - a.spend || b.leads - a.leads; });
+
+  var at = out.adsTotal;
+  out.ads.forEach(function (r) {
+    at.spend += r.spend; at.leads += r.leads; at.deals += r.deals; at.revenue += r.revenue;
+    if (r.balance) at.balance += r.balance;
+  });
+  at.cpl = (at.spend && at.leads) ? Math.round(at.spend / at.leads) : 0;
+  at.cpa = (at.spend && at.deals) ? Math.round(at.spend / at.deals) : 0;
+  at.romi = at.spend ? Math.round((at.revenue - at.spend) / at.spend * 100) : null;
+
   out.sources = pack(bySource, true);
   out.utm = pack(byUtm, false);
   out.managers = pack(byManager, false);
@@ -199,6 +235,60 @@ function apiStats(range) {
   out.romiTotal = spend.total ? Math.round((out.totals.revenue - spend.total) / spend.total * 100) : null;
   out.cplTotal = (spend.total && out.totals.leads) ? Math.round(spend.total / out.totals.leads) : 0;
 
+  return out;
+}
+
+/** К какой рекламной площадке относится заявка. */
+function platformOf_(o) {
+  var utm = String(o['utm_source'] || '').toLowerCase();
+  var src = String(o['Источник'] || '');
+  for (var i = 0; i < PLATFORMS.length; i++) {
+    var p = PLATFORMS[i];
+    if (utm && p.utm.indexOf(utm) !== -1) return p.name;
+    if (p.sources.indexOf(src) !== -1) return p.name;
+  }
+  return 'Другое';
+}
+
+/** Траты за период по площадкам. Старые строки с названием источника тоже поймём. */
+function spendByPlatform_(from, to) {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SPEND);
+  var res = { by: {}, total: 0 };
+  if (!sh || sh.getLastRow() < 2) return res;
+
+  sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(function (r) {
+    var d = (r[0] instanceof Date) ? r[0] : parseDate_(r[0]);
+    if (!d) return;
+    if (from && d < from) return;
+    if (to && d > to) return;
+    var sum = Number(r[2]) || 0;
+    if (!sum) return;
+
+    var label = String(r[1] || 'Другое');
+    var name = 'Другое';
+    for (var i = 0; i < PLATFORMS.length; i++) {
+      if (PLATFORMS[i].name === label || PLATFORMS[i].sources.indexOf(label) !== -1) {
+        name = PLATFORMS[i].name; break;
+      }
+    }
+    res.by[name] = (res.by[name] || 0) + sum;
+    res.total += sum;
+  });
+  return res;
+}
+
+/** Остатки на площадках: лист «Площадки» плюс живой баланс Авито. */
+function adBalances_() {
+  var out = {};
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SITES);
+  if (sh && sh.getLastRow() > 1) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(function (r) {
+      var name = String(r[0] || '').trim();
+      if (!name) return;
+      var v = Number(r[1]);
+      if (v) out[name] = v;
+    });
+  }
   return out;
 }
 
@@ -393,6 +483,8 @@ function avitoPull() {
   var d;
   try { d = avitoChats_(); } catch (e) { return 'Не получилось: ' + e.message; }
 
+  try { avitoBalance(); } catch (e) {}   // заодно держим остаток свежим
+
   var fresh = d.list.filter(function (chat) {
     var id = String(chat.id || '');
     return id && !d.seen[id];
@@ -424,6 +516,39 @@ function avitoPull() {
                     names.join(', '));
   }
   return 'Перенесено обращений: ' + fresh.length;
+}
+
+/**
+ * Остаток денег на Авито. Пишем его в лист «Площадки», чтобы аналитика
+ * показывала свежую цифру даже когда API недоступен.
+ */
+function avitoBalance() {
+  var self = avitoGet_('/core/v1/accounts/self');
+  if (self.code !== 200) return 'Авито не отдал профиль (' + self.code + ').';
+  var id = String(JSON.parse(self.text).id || '');
+
+  var res = avitoGet_('/core/v1/accounts/' + id + '/balance/');
+  if (res.code !== 200) {
+    return 'Авито не отдал баланс (' + res.code + '): ' + res.text.slice(0, 200) +
+           '\nВпишите остаток вручную на листе «Площадки».';
+  }
+
+  var data;
+  try { data = JSON.parse(res.text); } catch (e) { return 'Не разобрал ответ: ' + res.text.slice(0, 200); }
+  var real = Number(data.real || 0);
+  var bonus = Number(data.bonus || 0);
+
+  var sh = makeSitesSheet();
+  var rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
+  var row = 0;
+  rows.forEach(function (r, i) { if (String(r[0]).trim() === 'Авито') row = i + 2; });
+  if (!row) { sh.appendRow(['Авито', '', '']); row = sh.getLastRow(); }
+
+  sh.getRange(row, 2).setValue(real + bonus);
+  sh.getRange(row, 3).setValue(new Date());
+
+  return 'Остаток на Авито: ' + (real + bonus) + ' ₽' +
+         (bonus ? ' (из них бонусов ' + bonus + ')' : '');
 }
 
 /** Автосбор Авито раз в 10 минут. */

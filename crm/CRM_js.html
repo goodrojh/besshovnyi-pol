@@ -3,7 +3,8 @@
                 tab: '',     // '' — все, 'overdue' — просрочено, иначе название статуса
                 range: {},   // период, выбранный в аналитике
                 pick: [],    // отмеченные галочками источники; пусто — считаем всё
-                day: [] };
+                platform: '', // выбранная рекламная площадка в аналитике
+                platforms: [] };
 
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -21,6 +22,7 @@
       STATE.sources = res.sources; STATE.counts = res.counts || {};
       STATE.reasons = res.reasons || [];
       STATE.groups = res.groups || [];
+      STATE.platforms = res.platforms || [];
       $('who').textContent = res.me || '';
       fillSelects();
       renderTabs();
@@ -30,29 +32,50 @@
       $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
     }).apiList({
       q: $('q').value,
-      status: (STATE.tab && STATE.tab !== 'overdue') ? STATE.tab : '',
+      status: (STATE.tab === 'overdue' || STATE.tab === 'today') ? '' : STATE.tab,
       source: $('fSource').value,
-      onlyOverdue: STATE.tab === 'overdue'
+      onlyOverdue: STATE.tab === 'overdue',
+      onlyToday: STATE.tab === 'today'
     });
   }
 
-  function renderTabs() {
-    var items = [{ key: '', label: 'Все' }];
-    STATE.statuses.forEach(function (s) { items.push({ key: s, label: s }); });
-    items.push({ key: 'overdue', label: 'Просрочено', alarm: true });
+  var tabsBuilt = false;
 
-    $('tabs').innerHTML = items.map(function (it) {
-      var n = STATE.counts[it.key === '' ? '' : it.key];
-      var cls = 'tab' + (STATE.tab === it.key ? ' on' : '') + (it.alarm ? ' alarm' : '');
-      return '<button class="' + cls + '" data-tab="' + esc(it.key) + '">' + esc(it.label) +
-             (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
-    }).join('');
+  function tabItems() {
+    var items = [{ key: '', label: 'Все' },
+                 { key: 'today', label: 'Сегодня', cls: 'day' },
+                 { key: 'overdue', label: 'Просрочено', cls: 'alarm' }];
+    STATE.statuses.forEach(function (s) { items.push({ key: s, label: s }); });
+    return items;
+  }
+
+  /* Полосу вкладок пересобираем только один раз. Если перерисовывать её
+     на каждую загрузку, на телефоне она отскакивает к началу. */
+  function renderTabs() {
+    if (!tabsBuilt) {
+      $('tabs').innerHTML = tabItems().map(function (it) {
+        return '<button class="tab' + (it.cls ? ' ' + it.cls : '') + '" data-tab="' +
+               esc(it.key) + '"><span class="t">' + esc(it.label) +
+               '</span><span class="n" hidden></span></button>';
+      }).join('');
+
+      [].forEach.call($('tabs').querySelectorAll('.tab'), function (b) {
+        b.addEventListener('click', function () {
+          if (STATE.tab === b.dataset.tab) return;
+          STATE.tab = b.dataset.tab;
+          renderTabs();
+          load();
+        });
+      });
+      tabsBuilt = true;
+    }
 
     [].forEach.call($('tabs').querySelectorAll('.tab'), function (b) {
-      b.addEventListener('click', function () {
-        STATE.tab = b.dataset.tab;
-        load();
-      });
+      var n = STATE.counts[b.dataset.tab];
+      var badge = b.querySelector('.n');
+      badge.textContent = n || '';
+      badge.hidden = !n;
+      b.classList.toggle('on', STATE.tab === b.dataset.tab);
     });
   }
 
@@ -85,7 +108,8 @@
         '<td class="nowrap muted" data-label="Создана">' + esc(l['Создана']) + '</td>' +
         '<td class="head"><b>' + esc(l['Имя'] || '—') + '</b>' +
           '<div class="muted">' + esc(l['Телефон']) + '</div></td>' +
-        '<td class="hide-sm" data-label="Источник">' + esc(l['Источник']) + '</td>' +
+        '<td class="hide-sm" data-label="Площадь">' +
+          esc(l['Площадь, м²'] ? l['Площадь, м²'] + ' м²' : '—') + '</td>' +
         '<td class="hide-sm muted" data-label="Запрос">' +
           esc((l['Комментарий клиента'] || l['Интересует'] || '').slice(0, 70)) + '</td>' +
         '<td data-label="Статус"><span class="st ' + esc(l['Статус']) + '">' +
@@ -95,7 +119,7 @@
       '</tr>';
     }).join('');
     $('list').innerHTML = '<table><thead><tr>' +
-      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Источник</th>' +
+      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Площадь</th>' +
       '<th class="hide-sm">Запрос</th><th>Статус</th><th>Связаться</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
 
@@ -134,6 +158,7 @@
     $('cSum').value = l['Сумма, ₽'] || '';
     $('cNext').value = l['Следующий контакт'] || '';
     $('cOwner').value = l['Ответственный'] || '';
+    $('cAddr').value = l['Адрес объекта'] || '';
     $('cReason').value = l['Причина отказа'] || '';
     $('cTarget').value = l['Целевая'] || '';
     $('cNote').value = '';
@@ -163,6 +188,7 @@
       'Сумма, ₽': $('cSum').value,
       'Следующий контакт': $('cNext').value,
       'Ответственный': $('cOwner').value,
+      'Адрес объекта': $('cAddr').value,
       'Причина отказа': $('cReason').value,
       'Целевая': $('cTarget').value
     });
@@ -282,6 +308,28 @@
                '</span></div>';
       }).join('') + '</div></div>');
 
+    // --- рекламный бюджет
+    if (d.ads && d.ads.length) {
+      var a = d.adsTotal;
+      html.push('<div class="sect"><h3>Рекламный бюджет</h3>' +
+        '<div class="kpis" style="margin-bottom:12px">' +
+        kpi(money(a.balance), 'осталось на площадках, ₽', a.balance ? '' : 'warn') +
+        kpi(money(a.spend), 'потрачено за период, ₽') +
+        kpi(money(a.cpl), 'средняя цена заявки, ₽') +
+        kpi(money(a.cpa), 'цена договора, ₽') +
+        kpi(pct(a.romi), 'окупаемость', (a.romi !== null && a.romi < 0) ? 'warn' : 'good') +
+        '</div>' +
+        tbl(['Площадка', 'Остаток', 'Потрачено', 'Заявок', 'Цена заявки', 'Договоров',
+             'Цена договора', 'Выручка', 'ROMI'],
+          d.ads.map(function (r) {
+            return [esc(r.platform), r.balance === null ? '—' : money(r.balance), money(r.spend),
+                    r.leads, money(r.cpl), r.deals, money(r.cpa), money(r.revenue), pct(r.romi)];
+          })) +
+        '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
+        'Остаток на Авито обновляется сам. Остальные площадки — лист «Площадки». ' +
+        'Траты вносятся на листе «Расходы».</div></div>');
+    }
+
     // --- источники и деньги
     var srcHead = ['Источник', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'];
     if (d.spendKnown) srcHead = srcHead.concat(['Расход', 'Цена заявки', 'Цена договора', 'ДРР', 'ROMI']);
@@ -347,7 +395,8 @@
 
   function loadSummary(range) {
     if (range) STATE.range = range;
-    var req = { from: STATE.range.from || '', to: STATE.range.to || '', sources: STATE.pick };
+    var req = { from: STATE.range.from || '', to: STATE.range.to || '',
+                sources: STATE.pick, platform: STATE.platform };
     $('sumBody').textContent = 'Считаю…';
     google.script.run.withSuccessHandler(function (d) {
       if (!d.totals.leads) {
@@ -360,6 +409,23 @@
     }).withFailureHandler(function (e) {
       $('sumBody').textContent = 'Ошибка: ' + e.message;
     }).apiStats(req);
+  }
+
+  /* --- рекламные площадки --- */
+  function renderPlatforms() {
+    var items = [''].concat(STATE.platforms);
+    $('sPlatforms').innerHTML = items.map(function (name) {
+      return '<button class="chip' + (STATE.platform === name ? ' on' : '') +
+             '" data-plat="' + esc(name) + '">' + esc(name || 'Все площадки') + '</button>';
+    }).join('');
+
+    [].forEach.call($('sPlatforms').querySelectorAll('[data-plat]'), function (b) {
+      b.addEventListener('click', function () {
+        STATE.platform = b.dataset.plat;
+        renderPlatforms();
+        loadSummary(null);
+      });
+    });
   }
 
   /* --- выбор каналов галочками --- */
@@ -409,57 +475,6 @@
     });
   }
 
-  /* --- задачи на сегодня --- */
-  function loadDay() {
-    $('dayBody').textContent = 'Загружаю…';
-    google.script.run.withSuccessHandler(function (res) {
-      STATE.day = res.overdue.concat(res.today);
-      var html = [];
-
-      if (res.overdue.length) {
-        html.push('<div class="day-h warn">Просрочено · ' + res.overdue.length + '</div>');
-        html.push(res.overdue.map(function (l, i) { return taskRow(l, i, true); }).join(''));
-      }
-      html.push('<div class="day-h">Сегодня · ' + res.today.length + '</div>');
-      html.push(res.today.length
-        ? res.today.map(function (l, i) {
-            return taskRow(l, res.overdue.length + i, false);
-          }).join('')
-        : '<div class="muted" style="font-size:13.5px">На сегодня звонков не запланировано.</div>');
-
-      if (res.noPlan) {
-        html.push('<div class="day-h">Без плана</div>' +
-          '<div class="muted" style="font-size:13.5px">' + res.noPlan +
-          ' заявок без ответа и без даты следующего контакта. ' +
-          'Откройте вкладку «Новая» и назначьте им дату.</div>');
-      }
-
-      $('dSub').textContent = 'Просрочено ' + res.overdue.length + ' · на сегодня ' + res.today.length;
-      $('dayBody').innerHTML = html.join('');
-
-      [].forEach.call($('dayBody').querySelectorAll('.task'), function (t) {
-        t.addEventListener('click', function (e) {
-          if (e.target.closest('.tel')) return;   // нажали на трубку — просто звоним
-          $('dayModal').hidden = true;
-          openCard(STATE.day[+t.dataset.i]);
-        });
-      });
-    }).withFailureHandler(function (e) {
-      $('dayBody').textContent = 'Ошибка: ' + e.message;
-    }).apiToday();
-  }
-
-  function taskRow(l, i, late) {
-    var phone = String(l['Телефон'] || '').replace(/[^\d+]/g, '');
-    return '<div class="task' + (late ? ' late' : '') + '" data-i="' + i + '">' +
-      (phone ? '<a class="tel" href="tel:' + esc(phone) + '" title="Позвонить">&#9742;</a>' : '') +
-      '<div><b>' + esc(l['Имя'] || '—') + '</b>' +
-      '<span class="muted">' + esc(l['Телефон'] || 'без телефона') + ' · ' +
-      esc(l['Статус']) + '</span></div>' +
-      '<span class="when">' + esc(l['Следующий контакт'] || '') + '</span></div>';
-  }
-
-
   function periodRange(p) {
     var now = new Date();
     if (p === 'all') return {};
@@ -473,15 +488,12 @@
     $('sumModal').hidden = false;
     var r = periodRange('30');
     $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
+    renderPlatforms();
     renderPicks();
     loadSummary(r);
   });
 
-  $('dayBtn').addEventListener('click', function () {
-    $('dayModal').hidden = false;
-    loadDay();
-  });
-  $('dClose').addEventListener('click', function () { $('dayModal').hidden = true; });
+
 
   [].forEach.call(document.querySelectorAll('[data-period]'), function (b) {
     b.addEventListener('click', function () {
@@ -508,7 +520,7 @@
   $('q').addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(load, 400); });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    ['cardModal','newModal','sumModal','dayModal'].forEach(function (id) { $(id).hidden = true; });
+    ['cardModal','newModal','sumModal'].forEach(function (id) { $(id).hidden = true; });
   });
   [].forEach.call(document.querySelectorAll('.modal'), function (m) {
     m.addEventListener('click', function (e) { if (e.target === m) m.hidden = true; });

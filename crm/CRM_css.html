@@ -12,6 +12,7 @@
 
   header { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
   h1 { font-size:21px; letter-spacing:-.02em; }
+  .logo { height:34px; width:auto; margin-right:4px; }
   .who { font-size:13px; color:var(--ink-3); margin-left:auto; }
 
   .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
@@ -34,13 +35,19 @@
           padding:6px 13px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--ink-2); }
   .chip.on { background:var(--ink); border-color:var(--ink); color:#fff; }
   /* вкладки-папки, как в телеграме */
-  .tabs { display:flex; gap:4px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none;
-          border-bottom:1px solid var(--line); }
+  .tabs { display:flex; gap:4px; margin-bottom:14px; overflow-x:auto; overflow-y:hidden;
+          scrollbar-width:none; border-bottom:1px solid var(--line);
+          -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+          touch-action:pan-x; }
   .tabs::-webkit-scrollbar { display:none; }
   .tab { flex:none; background:none; border:none; border-radius:0; color:var(--ink-3);
          font-weight:600; font-size:14.5px; padding:10px 14px; cursor:pointer; white-space:nowrap;
          border-bottom:2.5px solid transparent; margin-bottom:-1px; }
   .tab:hover { background:none; color:var(--ink); }
+  .tab:focus { outline:none; }
+  .tab.day { color:var(--accent); }
+  .tab.day .n { background:var(--accent-soft); color:var(--accent-2); }
+  .tab.day.on { border-bottom-color:var(--accent); }
   .tab.on { color:var(--ink); border-bottom-color:var(--accent); }
   .tab .n { display:inline-block; margin-left:6px; font-size:12.5px; font-weight:700;
             color:var(--ink-3); background:var(--bg-2,#eef2f6); border-radius:999px; padding:1px 7px; }
@@ -143,6 +150,7 @@
     header { position:sticky; top:0; z-index:5; background:var(--bg); margin:0 -12px 10px;
              padding:calc(8px + env(safe-area-inset-top)) 12px 8px; gap:8px; }
     h1 { font-size:18px; width:100%; margin-bottom:2px; }
+    .logo { height:26px; }
     .who { display:none; }
     header button { flex:1; min-width:0; padding:11px 10px; font-size:14px; }
     .tabs { margin:0 -12px 12px; padding:0 12px; }

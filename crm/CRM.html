@@ -9,9 +9,9 @@
 <div class="wrap">
 
   <header>
-    <h1>Заявки</h1>
-    <button id="dayBtn">Сегодня</button>
-    <button class="ghost" id="addBtn">+ Заявка</button>
+    <img class="logo" src="https://gksphere.ru/assets/logo.png" alt="ГК Сфера"
+         onerror="this.onerror=null;this.src='https://goodrojh.github.io/besshovnyi-pol/assets/logo.png'">
+    <button id="addBtn">+ Заявка</button>
     <button class="ghost" id="sumBtn">Аналитика</button>
     <span class="who" id="who"></span>
   </header>
@@ -42,6 +42,8 @@
       <div class="f"><label>Сумма сделки, ₽</label><input type="number" id="cSum" min="0" step="1000"></div>
       <div class="f"><label>Связаться</label><input type="date" id="cNext"></div>
       <div class="f"><label>Ответственный</label><input type="text" id="cOwner" placeholder="Наталья"></div>
+      <div class="f" style="grid-column:1/-1"><label>Адрес объекта</label>
+        <input type="text" id="cAddr" placeholder="Город, улица, ориентир"></div>
       <div class="f"><label>Причина отказа</label><select id="cReason"></select></div>
       <div class="f"><label>Целевая заявка</label>
         <select id="cTarget">
@@ -89,16 +91,6 @@
   </div>
 </div>
 
-<!-- задачи на сегодня -->
-<div class="modal" id="dayModal" hidden>
-  <div class="card">
-    <h2>Задачи на сегодня</h2>
-    <div class="sub" id="dSub">—</div>
-    <div id="dayBody">Загружаю…</div>
-    <div class="actions"><button class="ghost" id="dClose" style="margin-left:auto">Закрыть</button></div>
-  </div>
-</div>
-
 <!-- сводка -->
 <div class="modal" id="sumModal" hidden>
   <div class="card card--wide">
@@ -120,6 +112,7 @@
       <button class="ghost" id="sApply">Показать</button>
     </div>
 
+    <div class="bar" id="sPlatforms" style="margin-bottom:8px"></div>
     <div class="bar" id="sGroups" style="margin-bottom:8px"></div>
     <div class="picks" id="sPicks"></div>
 

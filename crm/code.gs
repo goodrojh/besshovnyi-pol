@@ -35,6 +35,7 @@ var SHEET_LEADS  = 'Заявки';
 var SHEET_LOG    = 'История';
 var SHEET_IMPORT = 'Импорт';
 var SHEET_SPEND  = 'Расходы';
+var SHEET_SITES  = 'Площадки';
 var SHEET_AVITO  = 'Авито';
 
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];
@@ -57,6 +58,14 @@ var SOURCES = [
   'Сарафан', 'Партнёрство', 'Другое'
 ];
 
+// Рекламные площадки: куда уходят деньги. Заявка относится к площадке
+// по utm-метке, а если её нет — по источнику.
+var PLATFORMS = [
+  { name: 'Авито',         sources: ['Авито', 'Авито: звонок'], utm: ['avito'] },
+  { name: 'Яндекс Директ', sources: [], utm: ['yandex', 'yandex_direct', 'direct', 'ya'] },
+  { name: 'Без рекламы',   sources: ['Сарафан', 'Партнёрство'], utm: [] }
+];
+
 // Каналы привлечения: по ним в аналитике включаются галочки одним нажатием.
 var SOURCE_GROUPS = [
   { name: 'Сайт', items: ['Сайт: быстрая форма', 'Сайт: подбор системы',
@@ -77,7 +86,8 @@ var HEADERS = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
   'Страница входа', 'Реферер',
   // добавлены ради аналитики; дописываются в конец, чтобы не сдвинуть старые
-  'Первый контакт', 'Дошёл до', 'Договор от', 'Причина отказа', 'Целевая'
+  'Первый контакт', 'Дошёл до', 'Договор от', 'Причина отказа', 'Целевая',
+  'Адрес объекта'
 ];
 
 function col_(name) { return HEADERS.indexOf(name) + 1; }
@@ -100,6 +110,7 @@ function onOpen() {
     .addItem('Авито: проверить связь', 'avitoTestMenu')
     .addItem('Авито: забрать новые обращения', 'avitoPullMenu')
     .addItem('Авито: старые переписки не переносить', 'avitoMarkSeenMenu')
+    .addItem('Авито: обновить остаток денег', 'avitoBalanceMenu')
     .addItem('Авито: включить автосбор', 'avitoAutoOnMenu')
     .addItem('Авито: выключить автосбор', 'avitoAutoOffMenu')
     .addSeparator()
@@ -159,6 +170,10 @@ function avitoMarkSeenMenu() {
     'Продолжить?', ui.ButtonSet.YES_NO);
   if (ans !== ui.Button.YES) return;
   ui.alert(avitoMarkSeen());
+}
+
+function avitoBalanceMenu() {
+  SpreadsheetApp.getUi().alert(avitoBalance());
 }
 
 function avitoAutoOnMenu() {
@@ -330,18 +345,51 @@ function migrate() {
          '\nПроставлен этап у старых заявок: ' + filled;
 }
 
+function platformNames_() {
+  var out = PLATFORMS.map(function (p) { return p.name; });
+  out.push('Другое');
+  return out;
+}
+
 function makeSpendSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SHEET_SPEND);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_SPEND);
+    sh.getRange(1, 1, 1, 4).setValues([['Дата', 'Площадка', 'Сумма, ₽', 'Комментарий']])
+      .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+    sh.setColumnWidth(2, 180);
+    sh.setColumnWidth(4, 280);
+  }
+  // лист мог быть создан раньше, когда колонка называлась «Источник»
+  if (String(sh.getRange(1, 2).getValue()).trim() !== 'Площадка') {
+    sh.getRange(1, 2).setValue('Площадка');
+  }
+  sh.getRange(2, 2, sh.getMaxRows() - 1, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(platformNames_(), true).build());
+
+  makeSitesSheet();
+  return sh;
+}
+
+/** Остатки денег на рекламных площадках. Авито обновляется само, остальное — руками. */
+function makeSitesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_SITES);
   if (sh) return sh;
-  sh = ss.insertSheet(SHEET_SPEND);
-  sh.getRange(1, 1, 1, 4).setValues([['Дата', 'Источник', 'Сумма, ₽', 'Комментарий']])
+
+  sh = ss.insertSheet(SHEET_SITES);
+  sh.getRange(1, 1, 1, 3).setValues([['Площадка', 'Остаток, ₽', 'Обновлено']])
     .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
   sh.setFrozenRows(1);
-  sh.getRange(2, 2, sh.getMaxRows() - 1, 1).setDataValidation(
-    SpreadsheetApp.newDataValidation().requireValueInList(SOURCES, true).build());
-  sh.setColumnWidth(2, 180);
-  sh.setColumnWidth(4, 280);
+  sh.setColumnWidth(1, 180);
+
+  var rows = PLATFORMS.filter(function (p) { return p.name !== 'Без рекламы'; })
+    .map(function (p) { return [p.name, '', '']; });
+  sh.getRange(2, 1, rows.length, 3).setValues(rows);
+  sh.getRange(rows.length + 3, 1).setValue('Остаток по Авито подтягивается сам. Остальные — впишите вручную.')
+    .setFontColor('#74828e');
   return sh;
 }
 
