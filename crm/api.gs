@@ -155,7 +155,7 @@ function apiSave(patch) {
   var changes = [];
   markFirstTouch_(sh, row);
 
-  ['Статус', 'Сумма, ₽', 'Ответственный', 'Причина отказа', 'Целевая'].forEach(function (h) {
+  ['Статус', 'Источник', 'Сумма, ₽', 'Ответственный', 'Причина отказа', 'Целевая'].forEach(function (h) {
     if (patch[h] === undefined) return;
     var c = col_(h);
     var was = sh.getRange(row, c).getValue();

@@ -66,6 +66,7 @@
     STATE.sources.forEach(function (s) {
       $('fSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
       $('nSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+      $('cSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
     });
     $('cReason').insertAdjacentHTML('beforeend', '<option value="">—</option>');
     (STATE.reasons || []).forEach(function (s) {
@@ -103,6 +104,16 @@
     });
   }
 
+  /* В заявке может стоять источник, которого уже нет в списке
+     (загружен из «Импорта» или переименован). Показываем как есть. */
+  function setSource_(value) {
+    var v = String(value || '');
+    var sel = $('cSource');
+    var known = [].some.call(sel.options, function (o) { return o.value === v; });
+    if (!known) sel.insertAdjacentHTML('beforeend', '<option>' + esc(v) + '</option>');
+    sel.value = v;
+  }
+
   function openCard(l) {
     STATE.current = l;
     $('cName').textContent = l['Имя'] || 'Без имени';
@@ -119,6 +130,7 @@
     $('cFacts').innerHTML = facts.join('') || '<div class="muted">Дополнительных данных нет</div>';
 
     $('cStatus').value = l['Статус'] || 'Новая';
+    setSource_(l['Источник']);
     $('cSum').value = l['Сумма, ₽'] || '';
     $('cNext').value = l['Следующий контакт'] || '';
     $('cOwner').value = l['Ответственный'] || '';
@@ -147,6 +159,7 @@
     }).apiSave({
       __row: l.__row,
       'Статус': $('cStatus').value,
+      'Источник': $('cSource').value,
       'Сумма, ₽': $('cSum').value,
       'Следующий контакт': $('cNext').value,
       'Ответственный': $('cOwner').value,
