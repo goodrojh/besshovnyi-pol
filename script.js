@@ -198,6 +198,83 @@
     } catch (e) {}
   }
   // после успешной отправки уводим на отдельную страницу — она же цель в Метрике
+  /* ---------- CRM: единая точка приёма заявок ----------
+     Пока адрес пуст, сайт работает по-старому: почта + Telegram из браузера.
+     Как только сюда вписан адрес веб-приложения Google Apps Script,
+     заявка уходит одним запросом туда, а рассылку по каналам делает сервер. */
+  var CRM_URL = '';
+  var CRM_TOKEN = '';
+
+  /* ---------- Метки рекламы ----------
+     Запоминаем, с какого объявления пришёл человек: он может ходить
+     по сайту и оставить заявку уже без меток в адресе. */
+  var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  var UTM_STORE = 'gks_utm';
+
+  function captureUtm() {
+    var out = {};
+    try {
+      var saved = JSON.parse(sessionStorage.getItem(UTM_STORE) || 'null');
+      if (saved) out = saved;
+    } catch (e) {}
+
+    var params = {};
+    location.search.replace(/^\?/, '').split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      var k = decodeURIComponent(i < 0 ? pair : pair.slice(0, i));
+      var v = i < 0 ? '' : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' '));
+      params[k] = v;
+    });
+
+    var fresh = false;
+    UTM_KEYS.forEach(function (k) { if (params[k]) { out[k] = params[k]; fresh = true; } });
+    if (fresh || !out['Страница входа']) {
+      out['Страница входа'] = location.href.split('#')[0];
+      out['Реферер'] = document.referrer || '';
+    }
+    try { sessionStorage.setItem(UTM_STORE, JSON.stringify(out)); } catch (e) {}
+    return out;
+  }
+  var UTM = captureUtm();
+
+  // Названия полей на сайте и столбцов в таблице CRM должны совпадать
+  var CRM_FIELD_MAP = {
+    'Комментарий': 'Комментарий клиента',
+    'Файлы от клиента': 'Файлы',
+    'Раздел': 'Интересует'
+  };
+  var CRM_SOURCE_MAP = {
+    'Быстрая форма на сайте': 'Сайт: быстрая форма',
+    'Подбор системы на сайте': 'Сайт: подбор системы',
+    'Галерея объектов на сайте': 'Сайт: галерея объектов'
+  };
+
+  function sendToCrm(fields, done) {
+    if (!CRM_URL || !window.fetch) { done(new Error('crm off')); return; }
+    var body = { token: CRM_TOKEN };
+    Object.keys(fields).forEach(function (k) {
+      var key = CRM_FIELD_MAP[k] || k;
+      var val = fields[k];
+      if (key === 'Источник') val = CRM_SOURCE_MAP[val] || val;
+      if (key === 'Интересует' && body['Интересует']) return; // не затираем уже заполненное
+      body[key] = val;
+    });
+    Object.keys(UTM).forEach(function (k) { body[k] = UTM[k]; });
+    var parts = [];
+    Object.keys(body).forEach(function (k) {
+      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(body[k]));
+    });
+    fetch(CRM_URL, {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: parts.join('&')
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'crm error');
+      done(null);
+    }).catch(function (e) { done(e); });
+  }
+
   var THANKS_URL = 'thanks/';
   function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
   var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
@@ -332,15 +409,20 @@
             : files.length + ' шт. — передать не удалось, запросите у клиента');
         tg['Файлы от клиента'] = files.length + ' шт. — прикреплены сообщениями выше';
       }
-      sendTelegramRetry(tg, function (tgErr) {
-        if (TG_TOKEN && TG_CHAT_ID) {
-          mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
-        }
-        // Ответа почты дожидаемся: уход на «спасибо» обрывает запрос,
-        // и keepalive от этого не спасает — проверено на боевом сайте.
-        sendLead(mail, function (mailErr) {
-          if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
-          done(mailErr || tgErr);
+      // Если CRM подключена — она сама разложит заявку по каналам.
+      // Не ответила — уходим на прежний путь, чтобы заявка не пропала.
+      sendToCrm(mail, function (crmErr) {
+        if (!crmErr) { rememberLead(fields, files.length); done(null); return; }
+        sendTelegramRetry(tg, function (tgErr) {
+          if (TG_TOKEN && TG_CHAT_ID) {
+            mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
+          }
+          // Ответа почты дожидаемся: уход на «спасибо» обрывает запрос,
+          // и keepalive от этого не спасает — проверено на боевом сайте.
+          sendLead(mail, function (mailErr) {
+            if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
+            done(mailErr || tgErr);
+          });
         });
       });
     });

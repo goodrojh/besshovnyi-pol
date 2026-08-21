@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<base target="_top">
+<style>
+  :root {
+    --ink:#0f1820; --ink-2:#44525e; --ink-3:#74828e;
+    --line:#e3e9ee; --line-2:#d2dbe2; --bg:#f4f7fa; --panel:#fff;
+    --accent:#1f5fd4; --accent-2:#1545a0; --accent-soft:#e9f0fc;
+    --warn:#b42318; --warn-soft:#fef3f2; --ok:#067647; --ok-soft:#ecfdf3;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+         color:var(--ink); background:var(--bg); }
+  .wrap { max-width:1280px; margin:0 auto; padding:18px; }
+
+  header { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  h1 { font-size:21px; letter-spacing:-.02em; }
+  .who { font-size:13px; color:var(--ink-3); margin-left:auto; }
+
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  input, select, textarea, button { font:inherit; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    border:1.5px solid var(--line-2); border-radius:9px; padding:8px 10px; background:#fff; color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
+  textarea { width:100%; min-height:70px; resize:vertical; }
+  button {
+    border:none; border-radius:9px; padding:9px 15px; cursor:pointer; font-weight:600;
+    background:var(--accent); color:#fff;
+  }
+  button:hover { background:var(--accent-2); }
+  button.ghost { background:#fff; color:var(--ink); border:1.5px solid var(--line-2); }
+  button.ghost:hover { background:var(--bg); }
+  button:disabled { opacity:.5; cursor:default; }
+
+  .chip { border:1.5px solid var(--line-2); background:#fff; border-radius:999px;
+          padding:6px 13px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--ink-2); }
+  .chip.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+
+  table { width:100%; border-collapse:collapse; background:var(--panel);
+          border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); font-size:14px; vertical-align:top; }
+  th { background:#f8fafc; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3); }
+  tr.row { cursor:pointer; }
+  tr.row:hover td { background:#f8fbff; }
+  tr.overdue td:first-child { box-shadow:inset 3px 0 0 var(--warn); }
+  .muted { color:var(--ink-3); font-size:13px; }
+  .nowrap { white-space:nowrap; }
+
+  .st { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:600;
+        background:var(--accent-soft); color:var(--accent-2); white-space:nowrap; }
+  .st.Договор { background:var(--ok-soft); color:var(--ok); }
+  .st.Отказ { background:#f3f4f6; color:#6b7280; }
+  .st.Новая { background:#fff7e6; color:#b45309; }
+
+  .empty { text-align:center; padding:50px 20px; color:var(--ink-3); background:var(--panel);
+           border:1px solid var(--line); border-radius:12px; }
+
+  .modal { position:fixed; inset:0; background:rgba(8,14,20,.55); display:flex;
+           align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; z-index:10; }
+  .modal[hidden] { display:none; }
+  .card { background:var(--panel); border-radius:14px; width:min(720px,100%); padding:22px; margin:auto; }
+  .card h2 { font-size:19px; margin-bottom:4px; }
+  .card .sub { color:var(--ink-3); font-size:13px; margin-bottom:16px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:16px; }
+  .f label { display:block; font-size:12.5px; color:var(--ink-3); margin-bottom:5px; font-weight:600; }
+  .f input, .f select { width:100%; }
+  .facts { background:var(--bg); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
+  .facts div { display:flex; gap:10px; padding:3px 0; }
+  .facts b { color:var(--ink-3); font-weight:500; min-width:150px; }
+  .notes { white-space:pre-wrap; background:var(--bg); border-radius:10px; padding:12px 14px;
+           max-height:220px; overflow-y:auto; font-size:13.5px; line-height:1.55; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .call { display:inline-flex; align-items:center; gap:7px; font-weight:700; font-size:17px; color:var(--ink); }
+  .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+           background:var(--ink); color:#fff; padding:10px 18px; border-radius:999px; font-size:14px; z-index:20; }
+  .toast[hidden] { display:none; }
+  @media (max-width:720px) {
+    .hide-sm { display:none; }
+    .wrap { padding:12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Заявки</h1>
+    <button id="addBtn">+ Добавить заявку</button>
+    <button class="ghost" id="sumBtn">Сводка по источникам</button>
+    <span class="who" id="who"></span>
+  </header>
+
+  <div class="bar">
+    <input type="text" id="q" placeholder="Поиск: имя, телефон, заметка" style="min-width:230px">
+    <select id="fStatus"><option value="">Все статусы</option></select>
+    <select id="fSource"><option value="">Все источники</option></select>
+    <button class="chip" id="fOver">Просрочено</button>
+    <button class="ghost" id="reload">Обновить</button>
+  </div>
+
+  <div id="list"><div class="empty">Загружаю…</div></div>
+</div>
+
+<!-- карточка клиента -->
+<div class="modal" id="cardModal" hidden>
+  <div class="card">
+    <h2 id="cName">—</h2>
+    <div class="sub" id="cMeta"></div>
+
+    <a class="call" id="cCall" href="#">—</a>
+
+    <div class="facts" id="cFacts"></div>
+
+    <div class="grid">
+      <div class="f"><label>Статус</label><select id="cStatus"></select></div>
+      <div class="f"><label>Сумма сделки, ₽</label><input type="number" id="cSum" min="0" step="1000"></div>
+      <div class="f"><label>Связаться</label><input type="date" id="cNext"></div>
+      <div class="f"><label>Ответственный</label><input type="text" id="cOwner" placeholder="Наталья"></div>
+    </div>
+
+    <div class="f" style="margin-bottom:10px">
+      <label>Новая заметка</label>
+      <textarea id="cNote" placeholder="Что обсудили, о чём договорились"></textarea>
+    </div>
+    <div class="notes" id="cNotes">Заметок пока нет.</div>
+
+    <div class="actions">
+      <button id="cSave">Сохранить</button>
+      <button class="ghost" id="cAddNote">Добавить заметку</button>
+      <button class="ghost" id="cClose" style="margin-left:auto">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- новая заявка вручную -->
+<div class="modal" id="newModal" hidden>
+  <div class="card">
+    <h2>Новая заявка</h2>
+    <div class="sub">Для обращений из Telegram, MAX или по телефону</div>
+    <div class="grid">
+      <div class="f"><label>Имя</label><input type="text" id="nName"></div>
+      <div class="f"><label>Телефон *</label><input type="text" id="nPhone" placeholder="+7 (___) ___-__-__"></div>
+      <div class="f"><label>Источник</label><select id="nSource"></select></div>
+      <div class="f"><label>Тип объекта</label><input type="text" id="nType" placeholder="Склад, цех, паркинг"></div>
+      <div class="f"><label>Площадь, м²</label><input type="number" id="nArea" min="0"></div>
+    </div>
+    <div class="f" style="margin-bottom:10px">
+      <label>Комментарий</label>
+      <textarea id="nComment" placeholder="Что просит клиент"></textarea>
+    </div>
+    <div class="actions">
+      <button id="nSave">Создать</button>
+      <button class="ghost" id="nClose" style="margin-left:auto">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- сводка -->
+<div class="modal" id="sumModal" hidden>
+  <div class="card">
+    <h2>Сводка по источникам</h2>
+    <div class="sub">Столько заявок пришло и сколько дошло до договора</div>
+    <div id="sumBody">Считаю…</div>
+    <div class="actions"><button class="ghost" id="sClose" style="margin-left:auto">Закрыть</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+  var STATE = { leads: [], statuses: [], sources: [], current: null, onlyOverdue: false };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.hidden = true; }, 2600);
+  }
+  function busy(on) { document.body.style.cursor = on ? 'progress' : ''; }
+
+  function load() {
+    busy(true);
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false);
+      STATE.leads = res.leads; STATE.statuses = res.statuses; STATE.sources = res.sources;
+      $('who').textContent = res.me || '';
+      fillSelects();
+      render();
+    }).withFailureHandler(function (e) {
+      busy(false);
+      $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
+    }).apiList({
+      q: $('q').value,
+      status: $('fStatus').value,
+      source: $('fSource').value,
+      onlyOverdue: STATE.onlyOverdue
+    });
+  }
+
+  var selectsReady = false;
+  function fillSelects() {
+    if (selectsReady) return;
+    selectsReady = true;
+    STATE.statuses.forEach(function (s) {
+      $('fStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+      $('cStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+    });
+    STATE.sources.forEach(function (s) {
+      $('fSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+      $('nSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
+    });
+    $('nSource').value = 'Telegram';
+  }
+
+  function render() {
+    if (!STATE.leads.length) {
+      $('list').innerHTML = '<div class="empty">Заявок нет. Как только придёт первая — появится здесь.</div>';
+      return;
+    }
+    var rows = STATE.leads.map(function (l, i) {
+      return '<tr class="row' + (l.overdue ? ' overdue' : '') + '" data-i="' + i + '">' +
+        '<td class="nowrap muted">' + esc(l['Создана']) + '</td>' +
+        '<td><b>' + esc(l['Имя'] || '—') + '</b><div class="muted">' + esc(l['Телефон']) + '</div></td>' +
+        '<td class="hide-sm">' + esc(l['Источник']) + '</td>' +
+        '<td class="hide-sm muted">' + esc((l['Комментарий клиента'] || l['Интересует'] || '').slice(0, 70)) + '</td>' +
+        '<td><span class="st ' + esc(l['Статус']) + '">' + esc(l['Статус']) + '</span></td>' +
+        '<td class="nowrap' + (l.overdue ? '' : ' muted') + '">' + esc(l['Следующий контакт'] || '—') + '</td>' +
+      '</tr>';
+    }).join('');
+    $('list').innerHTML = '<table><thead><tr>' +
+      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Источник</th>' +
+      '<th class="hide-sm">Запрос</th><th>Статус</th><th>Связаться</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    [].forEach.call(document.querySelectorAll('tr.row'), function (tr) {
+      tr.addEventListener('click', function () { openCard(STATE.leads[+tr.dataset.i]); });
+    });
+  }
+
+  function openCard(l) {
+    STATE.current = l;
+    $('cName').textContent = l['Имя'] || 'Без имени';
+    $('cMeta').textContent = l['ID'] + ' · ' + l['Источник'] + ' · создана ' + l['Создана'];
+    var digits = String(l['Телефон']).replace(/\D/g, '');
+    $('cCall').textContent = l['Телефон'] || '—';
+    $('cCall').href = digits ? 'tel:+' + digits : '#';
+
+    var facts = [];
+    ['Комментарий клиента','Интересует','Тип объекта','Площадь, м²','Нагрузка','Основание',
+     'Файлы','Акция','utm_source','utm_campaign','Страница входа'].forEach(function (k) {
+      if (l[k] !== '' && l[k] != null) facts.push('<div><b>' + esc(k) + '</b><span>' + esc(l[k]) + '</span></div>');
+    });
+    $('cFacts').innerHTML = facts.join('') || '<div class="muted">Дополнительных данных нет</div>';
+
+    $('cStatus').value = l['Статус'] || 'Новая';
+    $('cSum').value = l['Сумма, ₽'] || '';
+    $('cNext').value = l['Следующий контакт'] || '';
+    $('cOwner').value = l['Ответственный'] || '';
+    $('cNote').value = '';
+    $('cNotes').textContent = l['Заметки'] || 'Заметок пока нет.';
+    $('cardModal').hidden = false;
+  }
+
+  function applyUpdated(l) {
+    STATE.current = l;
+    $('cNotes').textContent = l['Заметки'] || 'Заметок пока нет.';
+    $('cNote').value = '';
+    load();
+  }
+
+  $('cSave').addEventListener('click', function () {
+    var l = STATE.current; if (!l) return;
+    busy(true); this.disabled = true;
+    var btn = this;
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false); btn.disabled = false; applyUpdated(res); toast('Сохранено');
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiSave({
+      __row: l.__row,
+      'Статус': $('cStatus').value,
+      'Сумма, ₽': $('cSum').value,
+      'Следующий контакт': $('cNext').value,
+      'Ответственный': $('cOwner').value
+    });
+  });
+
+  $('cAddNote').addEventListener('click', function () {
+    var l = STATE.current; if (!l) return;
+    var txt = $('cNote').value.trim();
+    if (!txt) { toast('Сначала напишите заметку'); return; }
+    busy(true); var btn = this; btn.disabled = true;
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false); btn.disabled = false; applyUpdated(res); toast('Заметка добавлена');
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiAddNote(l.__row, txt);
+  });
+
+  $('nSave').addEventListener('click', function () {
+    var phone = $('nPhone').value.trim();
+    if (!phone.replace(/\D/g, '')) { toast('Нужен телефон'); return; }
+    busy(true); var btn = this; btn.disabled = true;
+    google.script.run.withSuccessHandler(function () {
+      busy(false); btn.disabled = false; $('newModal').hidden = true;
+      ['nName','nPhone','nType','nArea','nComment'].forEach(function (id) { $(id).value = ''; });
+      toast('Заявка создана'); load();
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiCreate({
+      'Имя': $('nName').value.trim(),
+      'Телефон': phone,
+      'Источник': $('nSource').value,
+      'Тип объекта': $('nType').value.trim(),
+      'Площадь, м²': $('nArea').value,
+      'Комментарий клиента': $('nComment').value.trim()
+    });
+  });
+
+  $('sumBtn').addEventListener('click', function () {
+    $('sumModal').hidden = false;
+    $('sumBody').textContent = 'Считаю…';
+    google.script.run.withSuccessHandler(function (rows) {
+      if (!rows.length) { $('sumBody').textContent = 'Пока нечего показывать.'; return; }
+      $('sumBody').innerHTML = '<table><thead><tr><th>Источник</th><th>Заявок</th>' +
+        '<th>Договоров</th><th>Сумма, ₽</th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          return '<tr><td>' + esc(r.source) + '</td><td>' + r.leads + '</td><td>' + r.deals +
+                 '</td><td>' + (r.sum ? r.sum.toLocaleString('ru-RU') : '—') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    }).withFailureHandler(function (e) {
+      $('sumBody').textContent = 'Ошибка: ' + e.message;
+    }).apiSummary();
+  });
+
+  $('addBtn').addEventListener('click', function () { $('newModal').hidden = false; });
+  $('cClose').addEventListener('click', function () { $('cardModal').hidden = true; });
+  $('nClose').addEventListener('click', function () { $('newModal').hidden = true; });
+  $('sClose').addEventListener('click', function () { $('sumModal').hidden = true; });
+  $('reload').addEventListener('click', load);
+  $('fStatus').addEventListener('change', load);
+  $('fSource').addEventListener('change', load);
+  $('fOver').addEventListener('click', function () {
+    STATE.onlyOverdue = !STATE.onlyOverdue;
+    this.classList.toggle('on', STATE.onlyOverdue);
+    load();
+  });
+  var qt;
+  $('q').addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(load, 400); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    ['cardModal','newModal','sumModal'].forEach(function (id) { $(id).hidden = true; });
+  });
+  [].forEach.call(document.querySelectorAll('.modal'), function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m) m.hidden = true; });
+  });
+
+  load();
+</script>
+</body>
+</html>
