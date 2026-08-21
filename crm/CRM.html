@@ -38,6 +38,22 @@
   .chip { border:1.5px solid var(--line-2); background:#fff; border-radius:999px;
           padding:6px 13px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--ink-2); }
   .chip.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+  /* вкладки-папки, как в телеграме */
+  .tabs { display:flex; gap:4px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none;
+          border-bottom:1px solid var(--line); }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex:none; background:none; border:none; border-radius:0; color:var(--ink-3);
+         font-weight:600; font-size:14.5px; padding:10px 14px; cursor:pointer; white-space:nowrap;
+         border-bottom:2.5px solid transparent; margin-bottom:-1px; }
+  .tab:hover { background:none; color:var(--ink); }
+  .tab.on { color:var(--ink); border-bottom-color:var(--accent); }
+  .tab .n { display:inline-block; margin-left:6px; font-size:12.5px; font-weight:700;
+            color:var(--ink-3); background:var(--bg-2,#eef2f6); border-radius:999px; padding:1px 7px; }
+  .tab.on .n { background:var(--accent-soft); color:var(--accent-2); }
+  .tab.alarm { color:var(--warn); }
+  .tab.alarm .n { background:var(--warn-soft); color:var(--warn); }
+  .tab.alarm.on { border-bottom-color:var(--warn); }
+
 
   table { width:100%; border-collapse:collapse; background:var(--panel);
           border:1px solid var(--line); border-radius:12px; overflow:hidden; }
@@ -92,12 +108,11 @@
     <button class="ghost" id="sumBtn">Сводка по источникам</button>
     <span class="who" id="who"></span>
   </header>
+  <div class="tabs" id="tabs"></div>
 
   <div class="bar">
     <input type="text" id="q" placeholder="Поиск: имя, телефон, заметка" style="min-width:230px">
-    <select id="fStatus"><option value="">Все статусы</option></select>
     <select id="fSource"><option value="">Все источники</option></select>
-    <button class="chip" id="fOver">Просрочено</button>
     <button class="ghost" id="reload">Обновить</button>
   </div>
 
@@ -163,6 +178,22 @@
   <div class="card">
     <h2>Сводка по источникам</h2>
     <div class="sub">Столько заявок пришло и сколько дошло до договора</div>
+
+    <div class="bar" style="margin-bottom:12px">
+      <button class="chip on" data-period="30">30 дней</button>
+      <button class="chip" data-period="7">7 дней</button>
+      <button class="chip" data-period="0">Сегодня</button>
+      <button class="chip" data-period="month">Этот месяц</button>
+      <button class="chip" data-period="all">Всё время</button>
+    </div>
+    <div class="bar" style="margin-bottom:14px">
+      <label class="muted" style="align-self:center">с</label>
+      <input type="date" id="sFrom">
+      <label class="muted" style="align-self:center">по</label>
+      <input type="date" id="sTo">
+      <button class="ghost" id="sApply">Показать</button>
+    </div>
+
     <div id="sumBody">Считаю…</div>
     <div class="actions"><button class="ghost" id="sClose" style="margin-left:auto">Закрыть</button></div>
   </div>
@@ -171,7 +202,8 @@
 <div class="toast" id="toast" hidden></div>
 
 <script>
-  var STATE = { leads: [], statuses: [], sources: [], current: null, onlyOverdue: false };
+  var STATE = { leads: [], statuses: [], sources: [], counts: {}, current: null,
+                tab: '' };   // '' — все, 'overdue' — просрочено, иначе название статуса
 
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -185,18 +217,40 @@
     busy(true);
     google.script.run.withSuccessHandler(function (res) {
       busy(false);
-      STATE.leads = res.leads; STATE.statuses = res.statuses; STATE.sources = res.sources;
+      STATE.leads = res.leads; STATE.statuses = res.statuses;
+      STATE.sources = res.sources; STATE.counts = res.counts || {};
       $('who').textContent = res.me || '';
       fillSelects();
+      renderTabs();
       render();
     }).withFailureHandler(function (e) {
       busy(false);
       $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
     }).apiList({
       q: $('q').value,
-      status: $('fStatus').value,
+      status: (STATE.tab && STATE.tab !== 'overdue') ? STATE.tab : '',
       source: $('fSource').value,
-      onlyOverdue: STATE.onlyOverdue
+      onlyOverdue: STATE.tab === 'overdue'
+    });
+  }
+
+  function renderTabs() {
+    var items = [{ key: '', label: 'Все' }];
+    STATE.statuses.forEach(function (s) { items.push({ key: s, label: s }); });
+    items.push({ key: 'overdue', label: 'Просрочено', alarm: true });
+
+    $('tabs').innerHTML = items.map(function (it) {
+      var n = STATE.counts[it.key === '' ? '' : it.key];
+      var cls = 'tab' + (STATE.tab === it.key ? ' on' : '') + (it.alarm ? ' alarm' : '');
+      return '<button class="' + cls + '" data-tab="' + esc(it.key) + '">' + esc(it.label) +
+             (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
+    }).join('');
+
+    [].forEach.call($('tabs').querySelectorAll('.tab'), function (b) {
+      b.addEventListener('click', function () {
+        STATE.tab = b.dataset.tab;
+        load();
+      });
     });
   }
 
@@ -205,7 +259,6 @@
     if (selectsReady) return;
     selectsReady = true;
     STATE.statuses.forEach(function (s) {
-      $('fStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
       $('cStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
     });
     STATE.sources.forEach(function (s) {
@@ -320,20 +373,60 @@
     });
   });
 
-  $('sumBtn').addEventListener('click', function () {
-    $('sumModal').hidden = false;
+  function ymd(d) {
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  function loadSummary(range) {
     $('sumBody').textContent = 'Считаю…';
-    google.script.run.withSuccessHandler(function (rows) {
-      if (!rows.length) { $('sumBody').textContent = 'Пока нечего показывать.'; return; }
-      $('sumBody').innerHTML = '<table><thead><tr><th>Источник</th><th>Заявок</th>' +
+    google.script.run.withSuccessHandler(function (res) {
+      var rows = res.rows || [];
+      if (!rows.length) { $('sumBody').textContent = 'За этот период заявок нет.'; return; }
+      var t = res.total;
+      $('sumBody').innerHTML =
+        '<table><thead><tr><th>Источник</th><th>Заявок</th>' +
         '<th>Договоров</th><th>Сумма, ₽</th></tr></thead><tbody>' +
         rows.map(function (r) {
           return '<tr><td>' + esc(r.source) + '</td><td>' + r.leads + '</td><td>' + r.deals +
                  '</td><td>' + (r.sum ? r.sum.toLocaleString('ru-RU') : '—') + '</td></tr>';
-        }).join('') + '</tbody></table>';
+        }).join('') +
+        '<tr><td><b>Итого</b></td><td><b>' + t.leads + '</b></td><td><b>' + t.deals +
+        '</b></td><td><b>' + (t.sum ? t.sum.toLocaleString('ru-RU') : '—') + '</b></td></tr>' +
+        '</tbody></table>';
     }).withFailureHandler(function (e) {
       $('sumBody').textContent = 'Ошибка: ' + e.message;
-    }).apiSummary();
+    }).apiSummary(range || {});
+  }
+
+  function periodRange(p) {
+    var now = new Date();
+    if (p === 'all') return {};
+    if (p === 'month') return { from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to: ymd(now) };
+    var days = Number(p) || 0;
+    var from = new Date(now.getTime() - days * 86400000);
+    return { from: ymd(from), to: ymd(now) };
+  }
+
+  $('sumBtn').addEventListener('click', function () {
+    $('sumModal').hidden = false;
+    var r = periodRange('30');
+    $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
+    loadSummary(r);
+  });
+
+  [].forEach.call(document.querySelectorAll('[data-period]'), function (b) {
+    b.addEventListener('click', function () {
+      [].forEach.call(document.querySelectorAll('[data-period]'), function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var r = periodRange(b.dataset.period);
+      $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
+      loadSummary(r);
+    });
+  });
+
+  $('sApply').addEventListener('click', function () {
+    [].forEach.call(document.querySelectorAll('[data-period]'), function (x) { x.classList.remove('on'); });
+    loadSummary({ from: $('sFrom').value, to: $('sTo').value });
   });
 
   $('addBtn').addEventListener('click', function () { $('newModal').hidden = false; });
@@ -341,13 +434,7 @@
   $('nClose').addEventListener('click', function () { $('newModal').hidden = true; });
   $('sClose').addEventListener('click', function () { $('sumModal').hidden = true; });
   $('reload').addEventListener('click', load);
-  $('fStatus').addEventListener('change', load);
   $('fSource').addEventListener('change', load);
-  $('fOver').addEventListener('click', function () {
-    STATE.onlyOverdue = !STATE.onlyOverdue;
-    this.classList.toggle('on', STATE.onlyOverdue);
-    load();
-  });
   var qt;
   $('q').addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(load, 400); });
   document.addEventListener('keydown', function (e) {

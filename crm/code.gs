@@ -37,7 +37,7 @@ var SHEET_LOG   = 'История';
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];
 
 var SOURCES = ['Сайт: быстрая форма', 'Сайт: подбор системы', 'Сайт: галерея объектов',
-               'Telegram', 'MAX', 'Звонок', 'Почта', 'Другое'];
+               'Telegram', 'MAX', 'Звонок', 'Почта', 'Сарафан', 'Партнёрство', 'Другое'];
 
 // Порядок столбцов листа «Заявки». Менять только вместе с интерфейсом.
 var HEADERS = [
@@ -66,6 +66,9 @@ function setup() {
   sh.setColumnWidth(col_('Комментарий клиента'), 260);
   sh.setColumnWidth(col_('Заметки'), 360);
   sh.setColumnWidth(col_('Файлы'), 220);
+  // Номер начинается с «+», и без текстового формата Таблицы считают его
+  // формулой и показывают #ERROR!
+  sh.getRange(2, col_('Телефон'), sh.getMaxRows() - 1, 1).setNumberFormat('@');
 
   sh.getRange(2, col_('Статус'), sh.getMaxRows() - 1, 1)
     .setDataValidation(SpreadsheetApp.newDataValidation()
@@ -145,12 +148,46 @@ function saveLeadRow_(data) {
     if (lead['Комментарий клиента'] === '—') lead['Комментарий клиента'] = '';
 
     sh.appendRow(HEADERS.map(function (h) { return lead[h]; }));
+    // Телефон дописываем отдельно в текстовую ячейку: иначе «+7 …»
+    // уедет в формулу и станет #ERROR!
+    var pc = col_('Телефон');
+    sh.getRange(sh.getLastRow(), pc).setNumberFormat('@').setValue(lead['Телефон']);
     return lead;
   } finally {
     lock.releaseLock();
   }
 }
 
+
+/**
+ * Разовый ремонт: номера, записанные до исправления, лежат в таблице
+ * как формулы и показываются как #ERROR!. Достаём исходный текст
+ * из формулы и возвращаем его обычным текстом.
+ * Запускать вручную из редактора, повторный запуск безвреден.
+ */
+function fixPhones() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
+  if (!sh || sh.getLastRow() < 2) return 'Заявок нет.';
+  var pc = col_('Телефон');
+  var rng = sh.getRange(2, pc, sh.getLastRow() - 1, 1);
+  var formulas = rng.getFormulas();
+  var values = rng.getValues();
+  var fixed = 0;
+
+  for (var i = 0; i < values.length; i++) {
+    var f = formulas[i][0];
+    var v = values[i][0];
+    var text = '';
+    if (f) text = String(f).replace(/^=/, '');            // было формулой
+    else if (v === '#ERROR!' || v === '') continue;
+    else continue;                                         // обычный текст — не трогаем
+    var cell = sh.getRange(i + 2, pc);
+    cell.setNumberFormat('@').setValue(text);
+    fixed++;
+  }
+  rng.setNumberFormat('@');
+  return 'Починено номеров: ' + fixed;
+}
 function nextId_(sh) {
   var last = sh.getLastRow();
   if (last < 2) return 'ЗАЯВКА-0001';
@@ -313,19 +350,33 @@ function apiList(filter) {
                 ['Договор', 'Отказ'].indexOf(o['Статус']) === -1;
     return o;
   }).filter(function (o) {
-    if (filter.status && o['Статус'] !== filter.status) return false;
+    // фильтры, общие для всех вкладок — по ним же считаются счётчики
     if (filter.source && o['Источник'] !== filter.source) return false;
-    if (filter.onlyOverdue && !o.overdue) return false;
     if (q) {
       var hay = [o['Имя'], o['Телефон'], o['Комментарий клиента'], o['ID'], o['Заметки']]
         .join(' ').toLowerCase();
       if (hay.indexOf(q) === -1) return false;
     }
     return true;
+  });
+
+  // счётчики для вкладок: сколько заявок в каждом статусе
+  var counts = { '': leads.length, 'overdue': 0 };
+  STATUSES.forEach(function (s) { counts[s] = 0; });
+  leads.forEach(function (o) {
+    if (counts[o['Статус']] !== undefined) counts[o['Статус']]++;
+    if (o.overdue) counts.overdue++;
+  });
+
+  leads = leads.filter(function (o) {
+    if (filter.onlyOverdue) return o.overdue;
+    if (filter.status) return o['Статус'] === filter.status;
+    return true;
   }).map(fmtDates_);
 
   leads.reverse();
   base.leads = leads;
+  base.counts = counts;
   return base;
 }
 
@@ -400,22 +451,37 @@ function logAction_(leadId, what) {
 }
 
 /** Сводка для директолога: заявки и суммы по источникам. */
-function apiSummary() {
+function apiSummary(range) {
   guard_();
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
-  if (!sh || sh.getLastRow() < 2) return [];
+  if (!sh || sh.getLastRow() < 2) return { rows: [], total: { leads: 0, deals: 0, sum: 0 } };
+
+  var from = null, to = null;
+  if (range && range.from) { from = new Date(range.from + 'T00:00:00'); }
+  if (range && range.to)   { to   = new Date(range.to   + 'T23:59:59'); }
+
   var rows = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
-  var by = {};
+  var by = {}, total = { leads: 0, deals: 0, sum: 0 };
+
   rows.forEach(function (r) {
     var o = rowToObj_(r);
+    var created = o['Создана'];
+    if (from && (!(created instanceof Date) || created < from)) return;
+    if (to && (!(created instanceof Date) || created > to)) return;
+
     var key = o['utm_source'] || o['Источник'] || 'без источника';
     by[key] = by[key] || { source: key, leads: 0, deals: 0, sum: 0 };
-    by[key].leads++;
+    by[key].leads++; total.leads++;
     if (o['Статус'] === 'Договор') {
-      by[key].deals++;
-      by[key].sum += Number(o['Сумма, ₽']) || 0;
+      var money = Number(o['Сумма, ₽']) || 0;
+      by[key].deals++; by[key].sum += money;
+      total.deals++; total.sum += money;
     }
   });
-  return Object.keys(by).map(function (k) { return by[k]; })
-    .sort(function (a, b) { return b.leads - a.leads; });
+
+  return {
+    rows: Object.keys(by).map(function (k) { return by[k]; })
+            .sort(function (a, b) { return b.leads - a.leads; }),
+    total: total
+  };
 }
