@@ -31,13 +31,15 @@ function CONFIG_() {
   };
 }
 
-var SHEET_LEADS = 'Заявки';
-var SHEET_LOG   = 'История';
+var SHEET_LEADS  = 'Заявки';
+var SHEET_LOG    = 'История';
+var SHEET_IMPORT = 'Импорт';
 
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];
 
 var SOURCES = ['Сайт: быстрая форма', 'Сайт: подбор системы', 'Сайт: галерея объектов',
-               'Telegram', 'MAX', 'Звонок', 'Почта', 'Сарафан', 'Партнёрство', 'Другое'];
+               'Авито', 'Telegram', 'MAX', 'Звонок', 'Почта', 'Сарафан',
+               'Партнёрство', 'Другое'];
 
 // Порядок столбцов листа «Заявки». Менять только вместе с интерфейсом.
 var HEADERS = [
@@ -59,6 +61,10 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('ГК Сфера')
     .addItem('Починить телефоны', 'fixPhonesMenu')
+    .addSeparator()
+    .addItem('Создать лист для импорта', 'makeImportSheetMenu')
+    .addItem('Загрузить заявки из листа «Импорт»', 'importLeadsMenu')
+    .addSeparator()
     .addItem('Первичная настройка (один раз)', 'setupMenu')
     .addToUi();
 }
@@ -70,6 +76,20 @@ function fixPhonesMenu() {
 function setupMenu() {
   setup();
   SpreadsheetApp.getUi().alert('Готово: листы и заголовки на месте.');
+}
+
+function makeImportSheetMenu() {
+  var sh = makeImportSheet();
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sh);
+  SpreadsheetApp.getUi().alert(
+    'Лист «Импорт» готов.\n\n' +
+    'Вставьте туда накопленные заявки: одна строка — один клиент. ' +
+    'Обязательна только колонка «Телефон».\n\n' +
+    'Потом: меню «ГК Сфера» → «Загрузить заявки из листа Импорт».');
+}
+
+function importLeadsMenu() {
+  SpreadsheetApp.getUi().alert(importLeads());
 }
 
 /* ============================================================
@@ -179,6 +199,127 @@ function saveLeadRow_(data) {
   }
 }
 
+
+/* ============================================================
+   ИМПОРТ НАКОПЛЕННЫХ ЗАЯВОК
+   Лист «Импорт» — перевалочный: туда вставляют выгрузку из Авито,
+   блокнота или старой таблицы, и одной командой всё переезжает
+   в «Заявки» с нормальными ID и без дублей по телефону.
+   ============================================================ */
+
+function makeImportSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_IMPORT) || ss.insertSheet(SHEET_IMPORT);
+  sh.clear();
+  sh.clearDataValidations();
+
+  var head = ['Дата', 'Имя', 'Телефон', 'Комментарий', 'Источник', 'Статус', 'Сумма, ₽'];
+  sh.getRange(1, 1, 1, head.length).setValues([head])
+    .setFontWeight('bold').setBackground('#f1f3f4');
+  sh.setFrozenRows(1);
+
+  var rest = sh.getMaxRows() - 1;
+  sh.getRange(2, 3, rest, 1).setNumberFormat('@');   // телефон — только текстом
+  sh.getRange(2, 5, rest, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(SOURCES, true).build());
+  sh.getRange(2, 6, rest, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(STATUSES, true).build());
+
+  sh.setColumnWidth(1, 110);
+  sh.setColumnWidth(3, 150);
+  sh.setColumnWidth(4, 340);
+  sh.setColumnWidth(5, 160);
+  return sh;
+}
+
+function importLeads() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var src = ss.getSheetByName(SHEET_IMPORT);
+  if (!src) return 'Листа «Импорт» нет. Сначала: меню «ГК Сфера» → «Создать лист для импорта».';
+
+  var last = src.getLastRow(), wide = src.getLastColumn();
+  if (last < 2) return 'В листе «Импорт» пусто — вставьте туда заявки и повторите.';
+
+  var head = src.getRange(1, 1, 1, wide).getValues()[0]
+               .map(function (h) { return String(h).trim(); });
+  function at(row, names) {
+    for (var i = 0; i < names.length; i++) {
+      var k = head.indexOf(names[i]);
+      if (k !== -1) return row[k];
+    }
+    return '';
+  }
+
+  var rows = src.getRange(2, 1, last - 1, wide).getValues();
+  var sh = ss.getSheetByName(SHEET_LEADS);
+  if (!sh) return 'Нет листа «Заявки» — запустите «Первичная настройка».';
+
+  var known = {};
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, col_('Телефон'), sh.getLastRow() - 1, 1).getValues()
+      .forEach(function (r) { var d = digits_(r[0]); if (d) known[d] = true; });
+  }
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var num = parseInt(nextId_(sh).replace(/\D/g, ''), 10);
+    var now = new Date();
+    var out = [], dupes = 0, noPhone = 0;
+
+    rows.forEach(function (r) {
+      var name  = String(at(r, ['Имя']) || '').trim();
+      var phone = String(at(r, ['Телефон']) || '').trim();
+      var d = digits_(phone);
+      if (!d && !name) return;                    // пустая строка — молча пропускаем
+      if (!d) { noPhone++; return; }
+      if (known[d]) { dupes++; return; }
+      known[d] = true;
+
+      var lead = {};
+      HEADERS.forEach(function (h) { lead[h] = ''; });
+      lead['ID'] = 'ЗАЯВКА-' + ('000' + (num++)).slice(-4);
+      lead['Создана'] = parseDate_(at(r, ['Дата'])) || now;
+      lead['Обновлена'] = now;
+      lead['Имя'] = name;
+      lead['Телефон'] = phone;
+      lead['Комментарий клиента'] = String(at(r, ['Комментарий', 'Комментарий клиента']) || '').trim();
+      lead['Источник'] = String(at(r, ['Источник']) || '').trim() || 'Другое';
+      lead['Статус'] = String(at(r, ['Статус']) || '').trim() || 'Новая';
+      lead['Сумма, ₽'] = at(r, ['Сумма, ₽', 'Сумма']) || '';
+      out.push(HEADERS.map(function (h) { return lead[h]; }));
+    });
+
+    var tail = '\nПропущено дублей (такой телефон уже есть): ' + dupes +
+               '\nПропущено строк без телефона: ' + noPhone;
+    if (!out.length) return 'Новых заявок не нашлось.' + tail;
+
+    var first = sh.getLastRow() + 1;
+    sh.getRange(first, col_('Телефон'), out.length, 1).setNumberFormat('@');
+    sh.getRange(first, 1, out.length, HEADERS.length).setValues(out);
+
+    src.deleteRows(2, last - 1);   // перенесённое убираем, чтобы не залить повторно
+    return 'Загружено заявок: ' + out.length + tail;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function digits_(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+
+/** Дата из ячейки: настоящая дата, «21.08.2026» или «2026-08-21». */
+function parseDate_(v) {
+  if (v instanceof Date) return v;
+  var s = String(v || '').trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/);
+  if (m) {
+    var y = Number(m[3]); if (y < 100) y += 2000;
+    return new Date(y, Number(m[2]) - 1, Number(m[1]));
+  }
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 /**
  * Разовый ремонт: номера, записанные до исправления, лежат в таблице
