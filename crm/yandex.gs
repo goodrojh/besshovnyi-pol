@@ -18,7 +18,9 @@ function yandexCfg_() {
   var p = PropertiesService.getScriptProperties();
   return {
     token: p.getProperty('YANDEX_TOKEN') || '',
-    login: p.getProperty('YANDEX_LOGIN') || ''
+    login: p.getProperty('YANDEX_LOGIN') || '',
+    // заполняется, только если Директ ведут с агентского аккаунта
+    clientLogin: p.getProperty('YANDEX_CLIENT_LOGIN') || ''
   };
 }
 
@@ -30,8 +32,8 @@ function yandexPost_(url, payload, extraHeaders) {
     Authorization: 'Bearer ' + cfg.token,
     'Accept-Language': 'ru'
   };
-  // агентствам и представителям нужен логин клиента, себе — не обязателен
-  if (cfg.login) headers['Client-Login'] = cfg.login;
+  // Client-Login нужен агентствам; на своём кабинете он лишний и мешает
+  if (cfg.clientLogin) headers['Client-Login'] = cfg.clientLogin;
   if (extraHeaders) {
     Object.keys(extraHeaders).forEach(function (k) { headers[k] = extraHeaders[k]; });
   }
@@ -54,7 +56,8 @@ function yandexTest() {
   var cfg = yandexCfg_();
   if (!cfg.token) return 'Не задан YANDEX_TOKEN в свойствах скрипта.';
 
-  var lines = ['Логин из настроек: ' + (cfg.login || 'не задан')];
+  var lines = ['Логин кабинета: ' + (cfg.login || 'не задан')];
+  if (cfg.clientLogin) lines.push('Работаем как агентство за: ' + cfg.clientLogin);
 
   var who = yandexPost_(YANDEX_V5 + 'clients', {
     method: 'get',
@@ -71,6 +74,10 @@ function yandexTest() {
   lines.push('');
   lines.push('Баланс (' + money.code + '): ' + money.text.slice(0, 600));
 
+  if (who.code === 400 && who.text.indexOf('Client-Login') !== -1) {
+    lines.push('');
+    lines.push('Директ ругается на Client-Login — уберите свойство YANDEX_CLIENT_LOGIN.');
+  }
   if (who.code === 401 || money.code === 401) {
     lines.push('');
     lines.push('401 — токен не принят. Проверьте, что скопирован он целиком и без пробелов.');
