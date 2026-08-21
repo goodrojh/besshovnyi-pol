@@ -202,8 +202,8 @@
      Пока адрес пуст, сайт работает по-старому: почта + Telegram из браузера.
      Как только сюда вписан адрес веб-приложения Google Apps Script,
      заявка уходит одним запросом туда, а рассылку по каналам делает сервер. */
-  var CRM_URL = '';
-  var CRM_TOKEN = '';
+  var CRM_URL = 'https://script.google.com/macros/s/AKfycbwQsgW5oT1HD-kF8x6SuGG2f6qxD9OWoW9TYBeBPIb8gZ0_xl7jK-HSy_DQljh5xETj/exec';
+  var CRM_TOKEN = 'GKSPHERE2004';
 
   /* ---------- Метки рекламы ----------
      Запоминаем, с какого объявления пришёл человек: он может ходить
@@ -411,20 +411,35 @@
       }
       // Если CRM подключена — она сама разложит заявку по каналам.
       // Не ответила — уходим на прежний путь, чтобы заявка не пропала.
+      // CRM отвечает через 3–4 секунды: она успевает записать заявку, отправить
+      // уведомление в Telegram и письмо. Держать человека всё это время на форме
+      // незачем — проверено, что запрос доезжает до сервера, даже если браузер
+      // уже ушёл на «спасибо». Поэтому ждём ответа не дольше секунды.
+      var settled = false, grace = null;
+      function crmOk() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(grace);
+        rememberLead(fields, files.length);
+        done(null);
+      }
       sendToCrm(mail, function (crmErr) {
-        if (!crmErr) { rememberLead(fields, files.length); done(null); return; }
+        if (!crmErr) { crmOk(); return; }
+        if (settled) return;      // уже ушли на «спасибо»
+        settled = true;
+        clearTimeout(grace);
+        // CRM недоступна — возвращаемся к прежнему пути, чтобы заявка не пропала
         sendTelegramRetry(tg, function (tgErr) {
           if (TG_TOKEN && TG_CHAT_ID) {
             mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
           }
-          // Ответа почты дожидаемся: уход на «спасибо» обрывает запрос,
-          // и keepalive от этого не спасает — проверено на боевом сайте.
           sendLead(mail, function (mailErr) {
             if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
             done(mailErr || tgErr);
           });
         });
       });
+      if (CRM_URL) grace = setTimeout(crmOk, 1000);
     });
   }
 
