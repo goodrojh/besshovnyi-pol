@@ -84,6 +84,9 @@ function onOpen() {
     .addSeparator()
     .addItem('Авито: проверить связь', 'avitoTestMenu')
     .addItem('Авито: забрать новые обращения', 'avitoPullMenu')
+    .addItem('Авито: старые переписки не переносить', 'avitoMarkSeenMenu')
+    .addItem('Авито: включить автосбор', 'avitoAutoOnMenu')
+    .addItem('Авито: выключить автосбор', 'avitoAutoOffMenu')
     .addSeparator()
     .addItem('Первичная настройка (один раз)', 'setupMenu')
     .addToUi();
@@ -131,6 +134,24 @@ function avitoTestMenu() {
 
 function avitoPullMenu() {
   SpreadsheetApp.getUi().alert(avitoPull());
+}
+
+function avitoMarkSeenMenu() {
+  var ui = SpreadsheetApp.getUi();
+  var ans = ui.alert('Старые переписки Авито',
+    'Все переписки, которые сейчас есть в Авито, будут помечены как уже обработанные — ' +
+    'в CRM они не попадут. Заявки будут заводиться только по новым обращениям.\n\n' +
+    'Продолжить?', ui.ButtonSet.YES_NO);
+  if (ans !== ui.Button.YES) return;
+  ui.alert(avitoMarkSeen());
+}
+
+function avitoAutoOnMenu() {
+  SpreadsheetApp.getUi().alert(avitoAuto(true));
+}
+
+function avitoAutoOffMenu() {
+  SpreadsheetApp.getUi().alert(avitoAuto(false));
 }
 
 /* ============================================================

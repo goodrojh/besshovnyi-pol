@@ -291,67 +291,120 @@ function avitoTest() {
  * Чат, который уже переносили, второй раз не заводится — список
  * перенесённых лежит на листе «Авито».
  */
-function avitoPull() {
+/** Общая часть: тянем список переписок и лист уже обработанных чатов. */
+function avitoChats_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var self = avitoGet_('/core/v1/accounts/self');
-  if (self.code !== 200) return 'Авито не отдал профиль (' + self.code + '): ' + self.text.slice(0, 300);
+  if (self.code !== 200) throw new Error('Авито не отдал профиль (' + self.code + '): ' + self.text.slice(0, 300));
 
   var accountId = String(JSON.parse(self.text).id || '');
-  if (!accountId) return 'В ответе Авито нет id аккаунта.';
+  if (!accountId) throw new Error('В ответе Авито нет id аккаунта.');
 
-  var chats = avitoGet_('/messenger/v2/accounts/' + accountId + '/chats?limit=100');
-  if (chats.code !== 200) {
-    return 'Переписка недоступна (' + chats.code + '): ' + chats.text.slice(0, 300) +
-           '\n\nСкорее всего, доступ к мессенджеру не открыт для этих ключей.';
+  var res = avitoGet_('/messenger/v2/accounts/' + accountId + '/chats?limit=100');
+  if (res.code !== 200) {
+    throw new Error('Переписка недоступна (' + res.code + '): ' + res.text.slice(0, 300));
   }
-
   var list = [];
-  try { list = JSON.parse(chats.text).chats || []; } catch (e) { return 'Не разобрал ответ Авито: ' + chats.text.slice(0, 300); }
+  try { list = JSON.parse(res.text).chats || []; }
+  catch (e) { throw new Error('Не разобрал ответ Авито: ' + res.text.slice(0, 300)); }
 
-  var seenSheet = ss.getSheetByName(SHEET_AVITO);
-  if (!seenSheet) {
-    seenSheet = ss.insertSheet(SHEET_AVITO);
-    seenSheet.getRange(1, 1, 1, 4).setValues([['Чат', 'Заявка', 'Клиент', 'Перенесён']])
+  var sh = ss.getSheetByName(SHEET_AVITO);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_AVITO);
+    sh.getRange(1, 1, 1, 4).setValues([['Чат', 'Заявка', 'Клиент', 'Перенесён']])
       .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
-    seenSheet.setFrozenRows(1);
-    seenSheet.hideSheet();
+    sh.setFrozenRows(1);
+    sh.hideSheet();
   }
   var seen = {};
-  if (seenSheet.getLastRow() > 1) {
-    seenSheet.getRange(2, 1, seenSheet.getLastRow() - 1, 1).getValues()
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues()
       .forEach(function (r) { seen[String(r[0])] = true; });
   }
+  return { accountId: accountId, list: list, sheet: sh, seen: seen };
+}
 
-  var added = 0;
-  list.forEach(function (chat) {
-    var chatId = String(chat.id || '');
-    if (!chatId || seen[chatId]) return;
+/** Кто написал, о чём и по какому объявлению. */
+function avitoChatInfo_(chat, accountId) {
+  var name = '';
+  (chat.users || []).forEach(function (u) {
+    if (String(u.id) !== String(accountId) && !name) name = String(u.name || '');
+  });
+  var text = '', about = '';
+  try { text = String(chat.last_message.content.text || ''); } catch (e) {}
+  try { about = String(chat.context.value.title || ''); } catch (e) {}
+  return { name: name, text: text, about: about };
+}
 
-    var name = '';
-    (chat.users || []).forEach(function (u) {
-      if (String(u.id) !== accountId && !name) name = String(u.name || '');
-    });
+/**
+ * Помечает все нынешние переписки как обработанные, не заводя заявок.
+ * Нужно один раз перед включением автосбора, чтобы старая переписка
+ * не улетела в CRM пачкой.
+ */
+function avitoMarkSeen() {
+  var d;
+  try { d = avitoChats_(); } catch (e) { return 'Не получилось: ' + e.message; }
 
-    var text = '';
-    try { text = String(chat.last_message.content.text || ''); } catch (e) {}
+  var rows = [];
+  d.list.forEach(function (chat) {
+    var id = String(chat.id || '');
+    if (!id || d.seen[id]) return;
+    var info = avitoChatInfo_(chat, d.accountId);
+    rows.push([id, '— старая переписка', info.name, new Date()]);
+  });
+  if (rows.length) d.sheet.getRange(d.sheet.getLastRow() + 1, 1, rows.length, 4).setValues(rows);
 
-    var about = '';
-    try { about = String(chat.context.value.title || ''); } catch (e) {}
+  return 'Помечено как старые: ' + rows.length + '\nТеперь в CRM попадут только новые обращения.';
+}
 
+/**
+ * Забирает новые обращения из мессенджера Авито и заводит их заявками.
+ * Уже перенесённый чат второй раз не заводится.
+ */
+function avitoPull() {
+  var d;
+  try { d = avitoChats_(); } catch (e) { return 'Не получилось: ' + e.message; }
+
+  var fresh = d.list.filter(function (chat) {
+    var id = String(chat.id || '');
+    return id && !d.seen[id];
+  });
+  if (!fresh.length) return 'Новых обращений с Авито нет.';
+
+  // при разовом наплыве не заваливаем Telegram — шлём одно письмо итогом
+  var quiet = fresh.length > 5;
+  var names = [];
+
+  fresh.forEach(function (chat) {
+    var info = avitoChatInfo_(chat, d.accountId);
     var lead = saveLeadRow_({
       'Источник': 'Авито',
-      'Имя': name || 'Клиент с Авито',
+      'Имя': info.name || 'Клиент с Авито',
       'Телефон': '',
-      'Комментарий клиента': text,
-      'Интересует': about,
-      'Файлы': 'https://www.avito.ru/profile/messenger/channel/' + chatId,
+      'Комментарий клиента': info.text,
+      'Интересует': info.about,
+      'Файлы': 'https://www.avito.ru/profile/messenger/channel/' + chat.id,
       'utm_source': 'avito'
     });
-
-    seenSheet.appendRow([chatId, lead['ID'], name, new Date()]);
-    notifyTelegram_(leadToTelegram_(lead));
-    added++;
+    d.sheet.appendRow([String(chat.id), lead['ID'], info.name, new Date()]);
+    names.push(info.name || 'без имени');
+    if (!quiet) notifyTelegram_(leadToTelegram_(lead));
   });
 
-  return 'Обращений с Авито перенесено: ' + added + '\nВсего чатов в ответе: ' + list.length;
+  if (quiet) {
+    notifyTelegram_('<b>Авито: перенесено обращений — ' + fresh.length + '</b>\n' +
+                    names.join(', '));
+  }
+  return 'Перенесено обращений: ' + fresh.length;
+}
+
+/** Автосбор Авито раз в 10 минут. */
+function avitoAuto(on) {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'avitoPull') ScriptApp.deleteTrigger(t);
+  });
+  if (!on) return 'Автосбор с Авито выключен.';
+  ScriptApp.newTrigger('avitoPull').timeBased().everyMinutes(10).create();
+  return 'Автосбор включён: раз в 10 минут новые обращения с Авито будут ' +
+         'сами появляться в CRM и в Telegram.';
 }
