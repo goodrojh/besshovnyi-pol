@@ -269,6 +269,24 @@
     }).join('') + '</div></div>';
   }
 
+  /* Объясняем прочерки: без этого непонятно, сломалось или данных нет. */
+  function adsNote(ads) {
+    var out = ['Значок ≈ означает, что расход посчитан по изменению остатка ' +
+               'на площадке. Пополнения из расхода вычтены.'];
+
+    ads.forEach(function (r) {
+      if (r.spend || r.platform === 'Без рекламы') return;
+      if (r.checks > 1) return;
+      out.push('<b>' + esc(r.platform) + ':</b> расход за период не посчитан — ' +
+               (r.checks ? 'за период была всего одна сверка остатка, нужна вторая'
+                         : 'нет ни строк на листе «Расходы», ни сверок остатка за этот период') +
+               '.');
+    });
+
+    return '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
+           out.join('<br>') + '</div>';
+  }
+
   function renderStats(d) {
     var t = d.totals;
     var conv = t.leads ? Math.round(t.deals / t.leads * 1000) / 10 : 0;
@@ -341,9 +359,7 @@
                     r.balance === null ? '—' : money(r.balance),
                     r.leads, money(r.cpl), r.deals, money(r.cpa), money(r.revenue), pct(r.romi)];
           })) +
-        '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
-        'Значок ≈ означает, что расход посчитан по изменению остатка на площадке, ' +
-        'а не по внесённым тратам. Пополнения из расхода вычтены.</div></div>');
+        adsNote(d.ads) + '</div>');
     }
 
     // --- источники и деньги

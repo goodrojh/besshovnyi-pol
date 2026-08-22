@@ -199,9 +199,8 @@ function apiStats(range) {
     // площадка, у которой все источники отмечены галочками, тоже показывается:
     // так виден остаток даже в период без заявок
     PLATFORMS.forEach(function (pl) {
-      if (!pl.sources.length) return;
-      var all = pl.sources.every(function (src) { return pick[src]; });
-      if (all) seen[pl.name] = true;
+      var any = pl.sources.some(function (src) { return pick[src]; });
+      if (any) seen[pl.name] = true;
     });
   } else {
     Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
@@ -224,6 +223,8 @@ function apiStats(range) {
       start: h.start === null ? null : Math.round(h.start),
       topup: Math.round(h.topup),
       byBalance: byBalance,
+      checks: h.points,                       // сколько было сверок остатка за период
+      manual: spendPlat.by[name] || 0,        // сколько внесено руками или отчётом
       spend: sp,
       leads: b.leads, deals: b.deals, revenue: b.revenue,
       cpl: (sp && b.leads) ? Math.round(sp / b.leads) : 0,
