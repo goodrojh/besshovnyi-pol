@@ -23,6 +23,7 @@
       STATE.reasons = res.reasons || [];
       STATE.groups = res.groups || [];
       STATE.platforms = res.platforms || [];
+      STATE.owner = !!res.owner;
       $('who').textContent = res.me || '';
       fillSelects();
       renderTabs();
@@ -159,6 +160,11 @@
     $('cNext').value = l['Следующий контакт'] || '';
     $('cOwner').value = l['Ответственный'] || '';
     $('cAddr').value = l['Адрес объекта'] || '';
+
+    // дату заявки и удаление показываем только владельцу
+    $('cCreatedBox').hidden = !STATE.owner;
+    $('cDelete').hidden = !STATE.owner;
+    $('cCreated').value = l.createdInput || '';
     $('cReason').value = l['Причина отказа'] || '';
     $('cTarget').value = l['Целевая'] || '';
     $('cNote').value = '';
@@ -189,6 +195,7 @@
       'Следующий контакт': $('cNext').value,
       'Ответственный': $('cOwner').value,
       'Адрес объекта': $('cAddr').value,
+      'Создана': STATE.owner ? $('cCreated').value : '',
       'Причина отказа': $('cReason').value,
       'Целевая': $('cTarget').value
     });
@@ -509,6 +516,27 @@
   $('sApply').addEventListener('click', function () {
     [].forEach.call(document.querySelectorAll('[data-period]'), function (x) { x.classList.remove('on'); });
     loadSummary({ from: $('sFrom').value, to: $('sTo').value });
+  });
+
+  $('cDelete').addEventListener('click', function () {
+    var l = STATE.current;
+    if (!l) return;
+    var who = (l['Имя'] || '') + ' ' + (l['Телефон'] || '');
+    if (!confirm('Удалить заявку ' + l['ID'] + '?\n' + who +
+                 '\n\nВосстановить будет нельзя. Запись об удалении останется в «Истории».')) return;
+
+    var btn = this;
+    btn.disabled = true;
+    google.script.run.withSuccessHandler(function (res) {
+      btn.disabled = false;
+      $('cardModal').hidden = true;
+      toast('Заявка удалена');
+      STATE.leads = res.leads; STATE.counts = res.counts || {};
+      renderTabs(); render();
+    }).withFailureHandler(function (e) {
+      btn.disabled = false;
+      toast('Не вышло: ' + e.message);
+    }).apiDelete(l.__row, l['ID']);
   });
 
   $('addBtn').addEventListener('click', function () { $('newModal').hidden = false; });

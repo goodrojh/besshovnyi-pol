@@ -34,6 +34,25 @@ function isAllowed_() {
   return cfg.allowed.indexOf(me) !== -1;
 }
 
+/**
+ * Владелец — тот, от чьего имени работает скрипт, то есть хозяин таблицы.
+ * Ему одному можно удалять заявки и править дату создания.
+ * Можно задать явно: свойство скрипта OWNER_EMAIL.
+ */
+function isOwner_() {
+  var me = (Session.getActiveUser().getEmail() || '').toLowerCase();
+  if (!me) return false;
+  var set = (PropertiesService.getScriptProperties().getProperty('OWNER_EMAIL') || '')
+              .toLowerCase().trim();
+  if (set) return me === set;
+  var owner = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
+  return !!owner && me === owner;
+}
+
+function ownerGuard_() {
+  if (!isOwner_()) throw new Error('Это может делать только владелец CRM');
+}
+
 function guard_() {
   if (!isAllowed_()) throw new Error('Нет доступа');
 }
@@ -45,6 +64,10 @@ function rowToObj_(r) {
 }
 
 function fmtDates_(o) {
+  // отдельно кладём дату создания в виде для поля ввода: 2026-08-22T10:30
+  if (o['Создана'] instanceof Date) {
+    o.createdInput = Utilities.formatDate(o['Создана'], 'Europe/Moscow', "yyyy-MM-dd'T'HH:mm");
+  }
   ['Создана', 'Обновлена', 'Следующий контакт', 'Первый контакт', 'Договор от']
     .forEach(function (k) {
       o[k] = (o[k] instanceof Date)
@@ -62,7 +85,7 @@ function apiList(filter) {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var base = { statuses: STATUSES, sources: SOURCES, reasons: REASONS,
                groups: SOURCE_GROUPS, platforms: platformNames_(),
-               me: Session.getActiveUser().getEmail() };
+               me: Session.getActiveUser().getEmail(), owner: isOwner_() };
   if (!sh || sh.getLastRow() < 2) { base.leads = []; return base; }
 
   var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
@@ -172,6 +195,19 @@ function apiSave(patch) {
     }
   });
 
+  // дату заявки правит только владелец: вручную занесённые заявки
+  // иначе встают одним днём и перекашивают статистику
+  if (patch['Создана'] !== undefined && String(patch['Создана'])) {
+    ownerGuard_();
+    var when = parseInput_(patch['Создана']);
+    if (when) {
+      var cc = col_('Создана');
+      var wasDate = sh.getRange(row, cc).getValue();
+      sh.getRange(row, cc).setValue(when);
+      changes.push('дата заявки: ' + fmtWhen_(wasDate) + ' → ' + fmtWhen_(when));
+    }
+  }
+
   if (patch['Следующий контакт'] !== undefined) {
     var c2 = col_('Следующий контакт');
     var v = patch['Следующий контакт'] ? new Date(patch['Следующий контакт'] + 'T00:00:00') : '';
@@ -204,6 +240,45 @@ function markStage_(sh, row, status) {
     var d = col_('Договор от');
     if (!sh.getRange(row, d).getValue()) sh.getRange(row, d).setValue(new Date());
   }
+}
+
+/** «2026-08-22T10:30» из поля ввода — в дату. */
+function parseInput_(v) {
+  var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+                  Number(m[4]), Number(m[5]), 0);
+}
+
+function fmtWhen_(d) {
+  return (d instanceof Date)
+    ? Utilities.formatDate(d, 'Europe/Moscow', 'dd.MM.yyyy HH:mm')
+    : '—';
+}
+
+/**
+ * Удаление заявки. Только владелец и только с подтверждением ID —
+ * чтобы случайный сдвиг строк не увёл нож не туда.
+ */
+function apiDelete(row, id) {
+  guard_();
+  ownerGuard_();
+
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
+  row = Number(row);
+  if (!row || row < 2 || row > sh.getLastRow()) throw new Error('Заявка не найдена');
+
+  var real = String(sh.getRange(row, 1).getValue() || '');
+  if (String(id) !== real) {
+    throw new Error('Список устарел, обновите страницу и повторите');
+  }
+
+  var name = String(sh.getRange(row, col_('Имя')).getValue() || '');
+  var phone = String(sh.getRange(row, col_('Телефон')).getValue() || '');
+  logAction_(real, 'ЗАЯВКА УДАЛЕНА: ' + name + ' ' + phone);
+  sh.deleteRow(row);
+
+  return apiList({});
 }
 
 /** Добавить заметку — дописывается сверху с датой и автором. */

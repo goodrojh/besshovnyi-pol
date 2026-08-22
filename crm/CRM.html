@@ -44,6 +44,8 @@
       <div class="f"><label>Ответственный</label><input type="text" id="cOwner" placeholder="Наталья"></div>
       <div class="f" style="grid-column:1/-1"><label>Адрес объекта</label>
         <input type="text" id="cAddr" placeholder="Город, улица, ориентир"></div>
+      <div class="f" id="cCreatedBox" hidden><label>Дата заявки</label>
+        <input type="datetime-local" id="cCreated"></div>
       <div class="f"><label>Причина отказа</label><select id="cReason"></select></div>
       <div class="f"><label>Целевая заявка</label>
         <select id="cTarget">
@@ -63,6 +65,7 @@
     <div class="actions">
       <button id="cSave">Сохранить</button>
       <button class="ghost" id="cAddNote">Добавить заметку</button>
+      <button class="ghost danger" id="cDelete" hidden>Удалить</button>
       <button class="ghost" id="cClose" style="margin-left:auto">Закрыть</button>
     </div>
   </div>
