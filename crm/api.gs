@@ -184,6 +184,17 @@ function apiSave(patch) {
   var changes = [];
   markFirstTouch_(sh, row);
 
+  // тип объекта и площадь меняет только владелец: от них зависит аналитика
+  ['Тип объекта', 'Площадь, м²'].forEach(function (h) {
+    if (patch[h] === undefined) return;
+    ownerGuard_();
+    var c = col_(h);
+    var was = sh.getRange(row, c).getValue();
+    if (String(was) === String(patch[h])) return;
+    sh.getRange(row, c).setValue(patch[h]);
+    changes.push(h + ': ' + (was || '—') + ' → ' + (patch[h] || '—'));
+  });
+
   ['Статус', 'Источник', 'Сумма, ₽', 'Ответственный', 'Причина отказа', 'Целевая',
    'Адрес объекта'].forEach(function (h) {
     if (patch[h] === undefined) return;

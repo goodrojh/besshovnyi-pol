@@ -27,7 +27,10 @@
 
   <div class="bar">
     <input type="text" id="q" placeholder="Поиск: имя, телефон, заметка" style="min-width:230px">
-    <select id="fSource"><option value="">Все источники</option></select>
+    <div class="drop">
+      <button class="ghost" id="srcBtn" type="button">Источники: все</button>
+      <div class="drop__menu" id="srcMenu" hidden></div>
+    </div>
     <button class="ghost" id="reload">Обновить</button>
   </div>
 
@@ -53,6 +56,10 @@
       <div class="f"><label>Ответственный</label><input type="text" id="cOwner" placeholder="Наталья"></div>
       <div class="f" style="grid-column:1/-1"><label>Адрес объекта</label>
         <input type="text" id="cAddr" placeholder="Город, улица, ориентир"></div>
+      <div class="f" id="cTypeBox" hidden><label>Тип объекта</label>
+        <input type="text" id="cType" placeholder="Склад, паркинг, цех"></div>
+      <div class="f" id="cAreaBox" hidden><label>Площадь, м²</label>
+        <input type="number" id="cArea" min="0" step="10"></div>
       <div class="f" id="cCreatedBox" hidden><label>Дата заявки</label>
         <input type="datetime-local" id="cCreated"></div>
       <div class="f"><label>Причина отказа</label><select id="cReason"></select></div>

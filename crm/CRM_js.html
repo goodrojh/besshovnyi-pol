@@ -2,7 +2,8 @@
   var STATE = { all: [], leads: [], statuses: [], sources: [], groups: [], counts: {}, current: null,
                 tab: '',     // '' — все, 'overdue' — просрочено, иначе название статуса
                 range: {},   // период, выбранный в аналитике
-                pick: [],    // отмеченные галочками источники; пусто — считаем всё
+                pick: [],    // отмеченные галочками источники в аналитике; пусто — считаем всё
+                srcPick: [], // отмеченные источники в списке заявок
                 platforms: [] };
 
   function $(id) { return document.getElementById(id); }
@@ -37,10 +38,12 @@
   /* Пересчёт списка и счётчиков без обращения к серверу. */
   function apply() {
     var q = $('q').value.toLowerCase().trim();
-    var src = $('fSource').value;
+    var chosen = {};
+    STATE.srcPick.forEach(function (x) { chosen[x] = true; });
+    var narrowed = STATE.srcPick.length > 0;
 
     var base = STATE.all.filter(function (o) {
-      if (src && o['Источник'] !== src) return false;
+      if (narrowed && !chosen[o['Источник']]) return false;
       if (!q) return true;
       var hay = [o['Имя'], o['Телефон'], o['Комментарий клиента'], o['ID'],
                  o['Заметки'], o['Адрес объекта']].join(' ').toLowerCase();
@@ -114,15 +117,104 @@
       $('cStatus').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
     });
     STATE.sources.forEach(function (s) {
-      $('fSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
       $('nSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
       $('cSource').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
     });
+    renderSrcMenu();
     $('cReason').insertAdjacentHTML('beforeend', '<option value="">—</option>');
     (STATE.reasons || []).forEach(function (s) {
       $('cReason').insertAdjacentHTML('beforeend', '<option>' + esc(s) + '</option>');
     });
     $('nSource').value = 'Telegram';
+  }
+
+  /* Выбор источников: группы и отдельные источники, всё галочками.
+     Галочка на группе включает и выключает всё, что в неё входит. */
+  function renderSrcMenu() {
+    var chosen = {};
+    STATE.srcPick.forEach(function (x) { chosen[x] = true; });
+
+    var used = {};
+    var html = ['<button class="ghost drop__all" type="button" data-src-all>Все источники</button>'];
+
+    STATE.groups.forEach(function (g) {
+      var on = g.items.length && g.items.every(function (x) { return chosen[x]; });
+      html.push('<label class="pick pick--group' + (on ? ' on' : '') + '">' +
+                '<input type="checkbox" data-group="' + esc(g.name) + '"' + (on ? ' checked' : '') +
+                '><span>' + esc(g.name) + '</span></label>');
+      g.items.forEach(function (src) {
+        used[src] = true;
+        html.push('<label class="pick pick--child' + (chosen[src] ? ' on' : '') + '">' +
+                  '<input type="checkbox" data-src="' + esc(src) + '"' +
+                  (chosen[src] ? ' checked' : '') + '><span>' + esc(src) + '</span></label>');
+      });
+    });
+
+    STATE.sources.forEach(function (src) {
+      if (used[src]) return;               // источник вне групп — показываем отдельно
+      html.push('<label class="pick' + (chosen[src] ? ' on' : '') + '">' +
+                '<input type="checkbox" data-src="' + esc(src) + '"' +
+                (chosen[src] ? ' checked' : '') + '><span>' + esc(src) + '</span></label>');
+    });
+
+    $('srcMenu').innerHTML = html.join('');
+
+    $('srcMenu').querySelector('[data-src-all]').addEventListener('click', function () {
+      STATE.srcPick = [];
+      renderSrcMenu();
+      apply();
+    });
+
+    [].forEach.call($('srcMenu').querySelectorAll('[data-src]'), function (box) {
+      box.addEventListener('change', function () {
+        toggleSrc_(box.dataset.src, box.checked);
+        renderSrcMenu();
+        apply();
+      });
+    });
+
+    [].forEach.call($('srcMenu').querySelectorAll('[data-group]'), function (box) {
+      box.addEventListener('change', function () {
+        var g = STATE.groups.filter(function (x) { return x.name === box.dataset.group; })[0];
+        if (!g) return;
+        g.items.forEach(function (src) { toggleSrc_(src, box.checked); });
+        renderSrcMenu();
+        apply();
+      });
+    });
+
+    srcBtnLabel();
+  }
+
+  function toggleSrc_(src, on) {
+    var i = STATE.srcPick.indexOf(src);
+    if (on && i === -1) STATE.srcPick.push(src);
+    if (!on && i !== -1) STATE.srcPick.splice(i, 1);
+  }
+
+  function srcBtnLabel() {
+    var n = STATE.srcPick.length;
+    var text = 'все';
+    if (n === 1) text = STATE.srcPick[0];
+    else if (n > 1) {
+      var chosen = {};
+      STATE.srcPick.forEach(function (x) { chosen[x] = true; });
+      var whole = STATE.groups.filter(function (g) {
+        return g.items.length && g.items.every(function (x) { return chosen[x]; });
+      });
+      var covered = whole.reduce(function (sum, g) { return sum + g.items.length; }, 0);
+      text = (whole.length && covered === n)
+        ? whole.map(function (g) { return g.name; }).join(', ')
+        : n + ' ' + plural_(n, 'источник', 'источника', 'источников');
+    }
+    $('srcBtn').textContent = 'Источники: ' + text;
+  }
+
+  function plural_(n, one, few, many) {
+    var last = n % 10, two = n % 100;
+    if (last === 1 && two !== 11) return one;
+    if (last >= 2 && last <= 4 && (two < 10 || two >= 20)) return few;
+    return many;
   }
 
   function render() {
@@ -135,6 +227,8 @@
         '<td class="nowrap muted" data-label="Создана">' + esc(l['Создана']) + '</td>' +
         '<td class="head"><b>' + esc(l['Имя'] || '—') + '</b>' +
           '<div class="muted">' + esc(l['Телефон']) + '</div></td>' +
+        '<td class="hide-sm" data-label="Объект">' +
+          esc(l['Тип объекта'] || '—') + '</td>' +
         '<td class="hide-sm" data-label="Площадь">' +
           esc(l['Площадь, м²'] ? l['Площадь, м²'] + ' м²' : '—') + '</td>' +
         '<td class="hide-sm muted" data-label="Запрос">' +
@@ -146,7 +240,8 @@
       '</tr>';
     }).join('');
     $('list').innerHTML = '<table><thead><tr>' +
-      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Площадь</th>' +
+      '<th>Создана</th><th>Клиент</th><th class="hide-sm">Объект</th>' +
+      '<th class="hide-sm">Площадь</th>' +
       '<th class="hide-sm">Запрос</th><th>Статус</th><th>Связаться</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
 
@@ -189,8 +284,12 @@
 
     // дату заявки и удаление показываем только владельцу
     $('cCreatedBox').hidden = !STATE.owner;
+    $('cTypeBox').hidden = !STATE.owner;
+    $('cAreaBox').hidden = !STATE.owner;
     $('cDelete').hidden = !STATE.owner;
     $('cCreated').value = l.createdInput || '';
+    $('cType').value = l['Тип объекта'] || '';
+    $('cArea').value = l['Площадь, м²'] || '';
     $('cReason').value = l['Причина отказа'] || '';
     $('cTarget').value = l['Целевая'] || '';
     $('cNote').value = '';
@@ -213,13 +312,8 @@
 
   $('cSave').addEventListener('click', function () {
     var l = STATE.current; if (!l) return;
-    busy(true); this.disabled = true;
-    var btn = this;
-    google.script.run.withSuccessHandler(function (res) {
-      busy(false); btn.disabled = false; applyUpdated(res); toast('Сохранено');
-    }).withFailureHandler(function (e) {
-      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
-    }).apiSave({
+
+    var patch = {
       __row: l.__row,
       'Статус': $('cStatus').value,
       'Источник': $('cSource').value,
@@ -227,10 +321,23 @@
       'Следующий контакт': $('cNext').value,
       'Ответственный': $('cOwner').value,
       'Адрес объекта': $('cAddr').value,
-      'Создана': STATE.owner ? $('cCreated').value : '',
       'Причина отказа': $('cReason').value,
       'Целевая': $('cTarget').value
-    });
+    };
+    // поля владельца отправляем, только если он их видел, — иначе сервер откажет
+    if (STATE.owner) {
+      patch['Создана'] = $('cCreated').value;
+      patch['Тип объекта'] = $('cType').value;
+      patch['Площадь, м²'] = $('cArea').value;
+    }
+
+    busy(true); this.disabled = true;
+    var btn = this;
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false); btn.disabled = false; applyUpdated(res); toast('Сохранено');
+    }).withFailureHandler(function (e) {
+      busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
+    }).apiSave(patch);
   });
 
   $('cAddNote').addEventListener('click', function () {
@@ -584,11 +691,18 @@
   $('nClose').addEventListener('click', function () { $('newModal').hidden = true; });
   $('sClose').addEventListener('click', function () { $('sumModal').hidden = true; });
   $('reload').addEventListener('click', load);
-  $('fSource').addEventListener('change', apply);
+
+  $('srcBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    $('srcMenu').hidden = !$('srcMenu').hidden;
+  });
+  $('srcMenu').addEventListener('click', function (e) { e.stopPropagation(); });
+  document.addEventListener('click', function () { $('srcMenu').hidden = true; });
   $('q').addEventListener('input', apply);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     ['cardModal','newModal','sumModal'].forEach(function (id) { $(id).hidden = true; });
+    $('srcMenu').hidden = true;
   });
   [].forEach.call(document.querySelectorAll('.modal'), function (m) {
     m.addEventListener('click', function (e) { if (e.target === m) m.hidden = true; });
