@@ -315,7 +315,7 @@
         '<div class="kpis" style="margin-bottom:12px">' +
         kpi(money(a.balance), 'осталось на площадках, ₽', a.balance ? '' : 'warn') +
         kpi(money(a.spend), 'потрачено за период, ₽') +
-        kpi(money(a.cpl), 'средняя цена заявки, ₽') +
+        kpi(money(a.cpl), 'цена заявки, ₽ (' + a.leads + ' платных)') +
         kpi(money(a.cpa), 'цена договора, ₽') +
         kpi(pct(a.romi), 'окупаемость', (a.romi !== null && a.romi < 0) ? 'warn' : 'good') +
         '</div>' +
@@ -335,17 +335,14 @@
     }
 
     // --- источники и деньги
-    var srcHead = ['Источник', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'];
-    if (d.spendKnown) srcHead = srcHead.concat(['Расход', 'Цена заявки', 'Цена договора', 'ДРР', 'ROMI']);
-    html.push('<div class="sect"><h3>Источники</h3>' + tbl(srcHead, d.sources.map(function (r) {
-      var row = [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
-      if (d.spendKnown) row = row.concat([money(r.spend), money(r.cpl), money(r.cpa),
-                                          r.drr === null ? '—' : r.drr + '%', pct(r.romi)]);
-      return row;
-    })) + (d.spendKnown ? '' :
+    html.push('<div class="sect"><h3>Источники</h3>' +
+      tbl(['Источник', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'],
+        d.sources.map(function (r) {
+          return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
+        })) +
       '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
-      'Цена заявки и окупаемость появятся, когда на листе «Расходы» будут траты на рекламу.</div>') +
-      '</div>');
+      'Деньги считаются по площадкам выше: один платёж в Директе кормит сразу ' +
+      'несколько форм на сайте, поэтому разносить его по источникам нечестно.</div></div>');
 
     // --- реклама по меткам
     var utm = d.utm.filter(function (r) { return r.key && r.key !== '—'; });

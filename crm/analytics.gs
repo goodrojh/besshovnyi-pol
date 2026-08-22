@@ -174,26 +174,15 @@ function apiStats(range) {
   out.reasons = Object.keys(byReason).map(function (k) { return { reason: k, n: byReason[k] }; })
                   .sort(function (a, b) { return b.n - a.n; });
 
-  // ---- расходы на рекламу
-  var spend = spendBySource_(from, to, pick);
-  out.spendKnown = spend.total > 0;
-
-  function pack(box, withSpend) {
+  // Деньги живут на уровне площадок, а не источников: в Директе
+  // один платёж кормит сразу несколько форм на сайте.
+  function pack(box) {
     return Object.keys(box).map(function (k) {
       var b = box[k];
-      var o2 = {
+      return {
         key: k, leads: b.leads, deals: b.deals, lost: b.lost, revenue: b.revenue,
         conv: b.leads ? Math.round(b.deals / b.leads * 1000) / 10 : 0
       };
-      if (withSpend) {
-        var sp = spend.by[k] || 0;
-        o2.spend = sp;
-        o2.cpl = sp && b.leads ? Math.round(sp / b.leads) : 0;
-        o2.cpa = sp && b.deals ? Math.round(sp / b.deals) : 0;
-        o2.romi = sp ? Math.round((b.revenue - sp) / sp * 100) : null;
-        o2.drr = b.revenue ? Math.round(sp / b.revenue * 1000) / 10 : null;
-      }
-      return o2;
     }).sort(function (a, b) { return b.leads - a.leads; });
   }
 
@@ -201,11 +190,24 @@ function apiStats(range) {
   var balances = adBalances_();
   var spendPlat = spendByPlatform_(from, to);
   var hist = moneyFromHistory_(from, to);
+
+  // Считаем деньги только тех площадок, что попали в выбранный фильтр.
+  // Иначе при выборе одного канала его заявки делились бы на общий бюджет.
   var seen = {};
-  Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
-  Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
-  Object.keys(balances).forEach(function (k) { seen[k] = true; });
-  Object.keys(hist).forEach(function (k) { seen[k] = true; });
+  if (range && range.platform) {
+    seen[range.platform] = true;
+  } else if (pick) {
+    // площадки выбранных источников плюс те, что реально встретились в заявках
+    Object.keys(pick).forEach(function (src) {
+      seen[platformOf_({ 'Источник': src })] = true;
+    });
+    Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
+  } else {
+    Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
+    Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
+    Object.keys(balances).forEach(function (k) { seen[k] = true; });
+    Object.keys(hist).forEach(function (k) { seen[k] = true; });
+  }
 
   out.ads = Object.keys(seen).map(function (name) {
     var b = byPlatform[name] || { leads: 0, deals: 0, revenue: 0 };
@@ -230,21 +232,26 @@ function apiStats(range) {
     };
   }).sort(function (a, b) { return b.spend - a.spend || b.leads - a.leads; });
 
+  // В итог по деньгам входят только площадки с расходом: делить бюджет
+  // на заявки из сарафана — значит занижать реальную цену заявки.
   var at = out.adsTotal;
   out.ads.forEach(function (r) {
-    at.spend += r.spend; at.leads += r.leads; at.deals += r.deals; at.revenue += r.revenue;
     if (r.balance) at.balance += r.balance;
+    if (!r.spend) return;
+    at.spend += r.spend; at.leads += r.leads; at.deals += r.deals; at.revenue += r.revenue;
   });
   at.cpl = (at.spend && at.leads) ? Math.round(at.spend / at.leads) : 0;
   at.cpa = (at.spend && at.deals) ? Math.round(at.spend / at.deals) : 0;
   at.romi = at.spend ? Math.round((at.revenue - at.spend) / at.spend * 100) : null;
 
-  out.sources = pack(bySource, true);
-  out.utm = pack(byUtm, false);
-  out.managers = pack(byManager, false);
-  out.spendTotal = spend.total;
-  out.romiTotal = spend.total ? Math.round((out.totals.revenue - spend.total) / spend.total * 100) : null;
-  out.cplTotal = (spend.total && out.totals.leads) ? Math.round(spend.total / out.totals.leads) : 0;
+  out.sources = pack(bySource);
+  out.utm = pack(byUtm);
+  out.managers = pack(byManager);
+  out.spendTotal = at.spend;
+  out.spendKnown = at.spend > 0;
+  out.romiTotal = at.romi;
+  out.cplTotal = at.cpl;
+  out.paidLeads = at.leads;
 
   return out;
 }
@@ -392,26 +399,6 @@ function areaOf_(v) {
   return Number(nums[0]) || 0;
 }
 
-/** Рекламные траты за период, разложенные по источникам. */
-function spendBySource_(from, to, pick) {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SPEND);
-  var res = { by: {}, total: 0 };
-  if (!sh || sh.getLastRow() < 2) return res;
-
-  sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(function (r) {
-    var d = (r[0] instanceof Date) ? r[0] : parseDate_(r[0]);
-    if (!d) return;
-    if (from && d < from) return;
-    if (to && d > to) return;
-    var src = String(r[1] || 'без источника');
-    if (pick && !pick[src]) return;
-    var sum = Number(r[2]) || 0;
-    if (!sum) return;
-    res.by[src] = (res.by[src] || 0) + sum;
-    res.total += sum;
-  });
-  return res;
-}
 
 
 /* ============================================================
