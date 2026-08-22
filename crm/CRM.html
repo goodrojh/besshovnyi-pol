@@ -11,8 +11,16 @@
   <header>
     <img class="logo" src="https://gksphere.ru/assets/logo.png" alt="ГК Сфера"
          onerror="this.onerror=null;this.src='https://goodrojh.github.io/besshovnyi-pol/assets/logo.png'">
-    <button id="addBtn">+ Заявка</button>
-    <button class="ghost" id="sumBtn">Аналитика</button>
+    <button id="addBtn" aria-label="Добавить заявку">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="lbl">Заявка</span>
+    </button>
+    <button class="ghost" id="sumBtn" aria-label="Аналитика">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span class="lbl">Аналитика</span>
+    </button>
     <span class="who" id="who"></span>
   </header>
   <div class="tabs" id="tabs"></div>

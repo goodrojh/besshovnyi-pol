@@ -1,5 +1,5 @@
 <script>
-  var STATE = { leads: [], statuses: [], sources: [], groups: [], counts: {}, current: null,
+  var STATE = { all: [], leads: [], statuses: [], sources: [], groups: [], counts: {}, current: null,
                 tab: '',     // '' — все, 'overdue' — просрочено, иначе название статуса
                 range: {},   // период, выбранный в аналитике
                 pick: [],    // отмеченные галочками источники; пусто — считаем всё
@@ -13,30 +13,58 @@
   }
   function busy(on) { document.body.style.cursor = on ? 'progress' : ''; }
 
+  /* Заявки берём с сервера один раз, дальше вкладки, поиск и источник
+     считаются прямо в браузере — переключение мгновенное. */
   function load() {
     busy(true);
     google.script.run.withSuccessHandler(function (res) {
       busy(false);
-      STATE.leads = res.leads; STATE.statuses = res.statuses;
-      STATE.sources = res.sources; STATE.counts = res.counts || {};
+      STATE.all = res.leads; STATE.statuses = res.statuses;
+      STATE.sources = res.sources;
       STATE.reasons = res.reasons || [];
       STATE.groups = res.groups || [];
       STATE.platforms = res.platforms || [];
       STATE.owner = !!res.owner;
       $('who').textContent = res.me || '';
       fillSelects();
-      renderTabs();
-      render();
+      apply();
     }).withFailureHandler(function (e) {
       busy(false);
       $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
-    }).apiList({
-      q: $('q').value,
-      status: (STATE.tab === 'overdue' || STATE.tab === 'today') ? '' : STATE.tab,
-      source: $('fSource').value,
-      onlyOverdue: STATE.tab === 'overdue',
-      onlyToday: STATE.tab === 'today'
+    }).apiList({});
+  }
+
+  /* Пересчёт списка и счётчиков без обращения к серверу. */
+  function apply() {
+    var q = $('q').value.toLowerCase().trim();
+    var src = $('fSource').value;
+
+    var base = STATE.all.filter(function (o) {
+      if (src && o['Источник'] !== src) return false;
+      if (!q) return true;
+      var hay = [o['Имя'], o['Телефон'], o['Комментарий клиента'], o['ID'],
+                 o['Заметки'], o['Адрес объекта']].join(' ').toLowerCase();
+      return hay.indexOf(q) !== -1;
     });
+
+    var counts = { '': base.length, overdue: 0, today: 0 };
+    STATE.statuses.forEach(function (st) { counts[st] = 0; });
+    base.forEach(function (o) {
+      if (counts[o['Статус']] !== undefined) counts[o['Статус']]++;
+      if (o.overdue) counts.overdue++;
+      if (o.istoday) counts.today++;
+    });
+    STATE.counts = counts;
+
+    STATE.leads = base.filter(function (o) {
+      if (STATE.tab === 'today') return o.istoday;
+      if (STATE.tab === 'overdue') return o.overdue;
+      if (STATE.tab) return o['Статус'] === STATE.tab;
+      return true;
+    });
+
+    renderTabs();
+    render();
   }
 
   var tabsBuilt = false;
@@ -63,8 +91,7 @@
         b.addEventListener('click', function () {
           if (STATE.tab === b.dataset.tab) return;
           STATE.tab = b.dataset.tab;
-          renderTabs();
-          load();
+          apply();
         });
       });
       tabsBuilt = true;
@@ -171,11 +198,17 @@
     $('cardModal').hidden = false;
   }
 
+  /* Обновляем заявку на месте: перезагружать весь список ради одной строки
+     долго, а данные с сервера пришли уже пересчитанными. */
   function applyUpdated(l) {
     STATE.current = l;
     $('cNotes').textContent = l['Заметки'] || 'Заметок пока нет.';
     $('cNote').value = '';
-    load();
+
+    for (var i = 0; i < STATE.all.length; i++) {
+      if (STATE.all[i].__row === l.__row) { STATE.all[i] = l; break; }
+    }
+    apply();
   }
 
   $('cSave').addEventListener('click', function () {
@@ -535,8 +568,8 @@
       btn.disabled = false;
       $('cardModal').hidden = true;
       toast('Заявка удалена');
-      STATE.leads = res.leads; STATE.counts = res.counts || {};
-      renderTabs(); render();
+      STATE.all = res.leads;
+      apply();
     }).withFailureHandler(function (e) {
       btn.disabled = false;
       toast('Не вышло: ' + e.message);
@@ -551,9 +584,8 @@
   $('nClose').addEventListener('click', function () { $('newModal').hidden = true; });
   $('sClose').addEventListener('click', function () { $('sumModal').hidden = true; });
   $('reload').addEventListener('click', load);
-  $('fSource').addEventListener('change', load);
-  var qt;
-  $('q').addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(load, 400); });
+  $('fSource').addEventListener('change', apply);
+  $('q').addEventListener('input', apply);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     ['cardModal','newModal','sumModal'].forEach(function (id) { $(id).hidden = true; });

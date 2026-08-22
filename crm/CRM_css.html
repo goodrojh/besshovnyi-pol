@@ -27,6 +27,8 @@
     border:none; border-radius:9px; padding:9px 15px; cursor:pointer; font-weight:600;
     background:var(--accent); color:#fff;
   }
+  .ico { width:17px; height:17px; vertical-align:-3px; margin-right:6px; }
+  header button { display:inline-flex; align-items:center; }
   button:hover { background:var(--accent-2); }
   button.ghost { background:#fff; color:var(--ink); border:1.5px solid var(--line-2); }
   button.ghost:hover { background:var(--bg); }
@@ -95,8 +97,11 @@
   .card h2 { font-size:19px; margin-bottom:4px; }
   .card .sub { color:var(--ink-3); font-size:13px; margin-bottom:16px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:16px; }
+  .f { min-width:0; }
   .f label { display:block; font-size:12.5px; color:var(--ink-3); margin-bottom:5px; font-weight:600; }
-  .f input, .f select { width:100%; }
+  /* min-width:0 обязателен: iOS считает поле даты шире колонки и распирает сетку */
+  .f input, .f select { width:100%; min-width:0; max-width:100%; }
+  .grid > .f { min-width:0; }
   .facts { background:var(--bg); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
   .facts div { display:flex; gap:10px; padding:3px 0; }
   .facts b { color:var(--ink-3); font-weight:500; min-width:150px; }
@@ -129,8 +134,8 @@
   .mini div span { position:absolute; top:100%; left:0; right:0; text-align:center;
                    font-size:10.5px; color:var(--ink-3); padding-top:3px; }
   .mini-wrap { padding-bottom:18px; }
-  /* таблицы возят пальцем только по горизонтали и только внутри себя */
-  .scroll-x { overflow-x:auto; overscroll-behavior-x:contain; touch-action:pan-x;
+  /* горизонтальная прокрутка не выходит за рамку таблицы */
+  .scroll-x { overflow-x:auto; overscroll-behavior-x:contain;
               -webkit-overflow-scrolling:touch; max-width:100%; }
   .num { text-align:right; white-space:nowrap; }
   .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
@@ -160,13 +165,23 @@
                text-decoration:none; font-size:17px; }
 
   @media (max-width:760px) {
-    .wrap { padding:10px 12px calc(14px + env(safe-area-inset-bottom)); }
+    /* снизу оставляем место под обе круглые кнопки, чтобы они
+       не закрывали последнюю заявку в списке */
+    .wrap { padding:10px 12px calc(156px + env(safe-area-inset-bottom)); }
     header { position:sticky; top:0; z-index:5; background:var(--bg); margin:0 -12px 10px;
              padding:calc(8px + env(safe-area-inset-top)) 12px 8px; gap:8px; }
     h1 { font-size:18px; width:100%; margin-bottom:2px; }
     .logo { height:26px; }
+    header { padding-bottom:6px; }
     .who { display:none; }
-    header button { flex:1; min-width:0; padding:11px 10px; font-size:14px; }
+    /* главные действия — крупными кружками внизу справа, до них дотягивается палец */
+    header button { position:fixed; right:16px; z-index:8; width:58px; height:58px;
+                    padding:0; border-radius:50%; justify-content:center;
+                    box-shadow:0 6px 18px rgba(15,24,32,.22); }
+    header #addBtn { bottom:calc(18px + env(safe-area-inset-bottom)); }
+    header #sumBtn { bottom:calc(88px + env(safe-area-inset-bottom)); background:var(--panel); }
+    header button .lbl { display:none; }
+    header button .ico { width:24px; height:24px; margin:0; vertical-align:0; }
     .tabs { margin:0 -12px 12px; padding:0 12px; }
     .tab { padding:12px 13px; }
     .bar > input[type=text] { flex:1 1 100%; }
@@ -193,7 +208,7 @@
     .card { border-radius:16px 16px 0 0; width:100%; margin:0;
             max-height:92vh; max-height:92dvh;
             overflow-y:auto; overflow-x:hidden;
-            overscroll-behavior:contain; touch-action:pan-y;
+            overscroll-behavior:contain;
             -webkit-overflow-scrolling:touch;
             padding:18px 16px calc(18px + env(safe-area-inset-bottom)); }
     .card--wide { width:100%; }
