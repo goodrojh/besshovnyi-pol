@@ -643,12 +643,13 @@ function avitoBalance() {
   var promo = 0, promoNote = '';
   var cpa = avitoPost_('/cpa/v3/balanceInfo', {}, { 'X-Source': 'gksphere-crm' });
   if (cpa.code === 200) {
-    try { promo = Number(JSON.parse(cpa.text).balance || 0); } catch (e) {}
+    // счёт продвижения Авито отдаёт баланс в копейках
+    try { promo = Number(JSON.parse(cpa.text).balance || 0) / 100; } catch (e) {}
   } else {
     promoNote = ' (счёт продвижения не ответил: ' + cpa.code + ')';
   }
 
-  var total = real + bonus + promo;
+  var total = Math.round((real + bonus + promo) * 100) / 100;
   if (total > 0) {
     writeBalance_('Авито', total);
     return 'Остаток на Авито: ' + total + ' ₽' + promoNote +
