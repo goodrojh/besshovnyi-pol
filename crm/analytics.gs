@@ -362,6 +362,21 @@ function avitoToken_() {
   return data.access_token;
 }
 
+function avitoPost_(path, payload, extraHeaders) {
+  var headers = { Authorization: 'Bearer ' + avitoToken_() };
+  if (extraHeaders) {
+    Object.keys(extraHeaders).forEach(function (k) { headers[k] = extraHeaders[k]; });
+  }
+  var res = UrlFetchApp.fetch('https://api.avito.ru' + path, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: headers,
+    payload: JSON.stringify(payload || {}),
+    muteHttpExceptions: true
+  });
+  return { code: res.getResponseCode(), text: res.getContentText() };
+}
+
 function avitoGet_(path) {
   var res = UrlFetchApp.fetch('https://api.avito.ru' + path, {
     method: 'get',
@@ -538,10 +553,20 @@ function avitoBalance() {
   var real = Number(data.real || 0);
   var bonus = Number(data.bonus || 0);
 
-  writeBalance_('Авито', real + bonus);
+  if (real + bonus > 0) {
+    writeBalance_('Авито', real + bonus);
+    return 'Остаток на Авито: ' + (real + bonus) + ' ₽' +
+           (bonus ? ' (из них бонусов ' + bonus + ')' : '');
+  }
 
-  return 'Остаток на Авито: ' + (real + bonus) + ' ₽' +
-         (bonus ? ' (из них бонусов ' + bonus + ')' : '');
+  // ноль — либо кошелёк пуст, либо деньги лежат на счёте продвижения.
+  // Показываем оба ответа целиком, чтобы понять, откуда брать сумму.
+  var cpa = avitoPost_('/cpa/v3/balanceInfo', {}, { 'X-Source': 'gksphere-crm' });
+  return 'Кошелёк вернул ноль.' +
+         '\n\nОтвет кошелька (' + res.code + '): ' + res.text.slice(0, 300) +
+         '\n\nСчёт продвижения (' + cpa.code + '): ' + cpa.text.slice(0, 300) +
+         '\n\nЕсли обе суммы нулевые — на счетах Авито действительно пусто, ' +
+         'и остаток можно вписать вручную на листе «Площадки».';
 }
 
 /** Автосбор Авито раз в 10 минут. */
