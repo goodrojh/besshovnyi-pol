@@ -62,7 +62,6 @@ function apiStats(range) {
     if (pick && !pick[String(o['Источник'] || '')]) return;
 
     var platform = platformOf_(o);
-    if (range && range.platform && platform !== range.platform) return;
 
     var status  = String(o['Статус'] || '');
     var isDeal  = status === 'Договор';
@@ -191,19 +190,20 @@ function apiStats(range) {
   var spendPlat = spendByPlatform_(from, to);
   var hist = moneyFromHistory_(from, to);
 
-  // Считаем деньги только тех площадок, что попали в выбранный фильтр.
-  // Иначе при выборе одного канала его заявки делились бы на общий бюджет.
+  // Деньги считаем по площадкам, к которым относятся выбранные заявки.
+  // Без фильтра — по всем, где есть заявки, траты или остаток.
   var seen = {};
-  if (range && range.platform) {
-    seen[range.platform] = true;
-  } else if (pick) {
-    // площадки выбранных источников плюс те, что реально встретились в заявках
-    Object.keys(pick).forEach(function (src) {
-      seen[platformOf_({ 'Источник': src })] = true;
+  Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
+
+  if (pick) {
+    // площадка, у которой все источники отмечены галочками, тоже показывается:
+    // так виден остаток даже в период без заявок
+    PLATFORMS.forEach(function (pl) {
+      if (!pl.sources.length) return;
+      var all = pl.sources.every(function (src) { return pick[src]; });
+      if (all) seen[pl.name] = true;
     });
-    Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
   } else {
-    Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
     Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
     Object.keys(balances).forEach(function (k) { seen[k] = true; });
     Object.keys(hist).forEach(function (k) { seen[k] = true; });

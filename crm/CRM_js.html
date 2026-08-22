@@ -3,7 +3,6 @@
                 tab: '',     // '' — все, 'overdue' — просрочено, иначе название статуса
                 range: {},   // период, выбранный в аналитике
                 pick: [],    // отмеченные галочками источники; пусто — считаем всё
-                platform: '', // выбранная рекламная площадка в аналитике
                 platforms: [] };
 
   function $(id) { return document.getElementById(id); }
@@ -300,11 +299,11 @@
       cards.push(kpi(pct(d.romiTotal), 'окупаемость рекламы',
                      d.romiTotal !== null && d.romiTotal < 0 ? 'warn' : 'good'));
     }
-    html.push('<div class="sect"><div class="kpis">' + cards.join('') + '</div></div>');
+    if (t.leads) html.push('<div class="sect"><div class="kpis">' + cards.join('') + '</div></div>');
 
     // --- воронка
     var max = d.funnel.length ? d.funnel[0].count : 0;
-    html.push('<div class="sect"><h3>Воронка</h3><div class="fun">' +
+    if (t.leads) html.push('<div class="sect"><h3>Воронка</h3><div class="fun">' +
       d.funnel.map(function (f) {
         var w = max ? Math.round(f.count / max * 100) : 0;
         return '<div class="fun-row"><span>' + esc(f.stage) + '</span>' +
@@ -315,6 +314,12 @@
                '</span></div>';
       }).join('') + '</div></div>');
 
+    if (!t.leads) {
+      html.push('<div class="sect"><div class="muted" style="font-size:13.5px">' +
+        'Заявок за этот период нет — считать конверсию не из чего. ' +
+        'Ниже только деньги на площадках.</div></div>');
+    }
+
     // --- рекламный бюджет
     if (d.ads && d.ads.length) {
       var a = d.adsTotal;
@@ -322,7 +327,7 @@
         '<div class="kpis" style="margin-bottom:12px">' +
         kpi(money(a.balance), 'осталось на площадках, ₽', a.balance ? '' : 'warn') +
         kpi(money(a.spend), 'потрачено за период, ₽') +
-        kpi(money(a.cpl), 'цена заявки, ₽ (' + a.leads + ' платных)') +
+        kpi(a.cpl ? money(a.cpl) : '—', 'цена заявки, ₽ (' + a.leads + ' платных)') +
         kpi(money(a.cpa), 'цена договора, ₽') +
         kpi(pct(a.romi), 'окупаемость', (a.romi !== null && a.romi < 0) ? 'warn' : 'good') +
         '</div>' +
@@ -342,7 +347,7 @@
     }
 
     // --- источники и деньги
-    html.push('<div class="sect"><h3>Источники</h3>' +
+    if (t.leads) html.push('<div class="sect"><h3>Источники</h3>' +
       tbl(['Источник', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'],
         d.sources.map(function (r) {
           return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
@@ -353,7 +358,7 @@
 
     // --- реклама по меткам
     var utm = d.utm.filter(function (r) { return r.key && r.key !== '—'; });
-    if (utm.length) {
+    if (t.leads && utm.length) {
       html.push('<div class="sect"><h3>Рекламные метки (utm_source)</h3>' +
         tbl(['Метка', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'], utm.map(function (r) {
           return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
@@ -361,7 +366,7 @@
     }
 
     // --- качество заявок
-    html.push('<div class="sect"><h3>Качество заявок</h3><div class="kpis">' +
+    if (t.leads) html.push('<div class="sect"><h3>Качество заявок</h3><div class="kpis">' +
       kpi(t.target, 'целевых') + kpi(t.nonTarget, 'нецелевых', t.nonTarget ? 'warn' : '') +
       kpi(t.unmarked, 'не размечено') +
       kpi(t.leads - t.nonTarget ? Math.round(t.deals / (t.leads - t.nonTarget) * 1000) / 10 + '%' : '—',
@@ -369,7 +374,7 @@
       '</div></div>');
 
     // --- отказы
-    if (d.reasons.length) {
+    if (t.leads && d.reasons.length) {
       html.push('<div class="sect"><h3>Почему отказали</h3>' +
         tbl(['Причина', 'Сколько'], d.reasons.map(function (r) {
           return [esc(r.reason), r.n];
@@ -377,7 +382,8 @@
     }
 
     // --- менеджеры
-    if (d.managers.length > 1 || (d.managers[0] && d.managers[0].key !== 'не назначен')) {
+    if (t.leads && (d.managers.length > 1 ||
+        (d.managers[0] && d.managers[0].key !== 'не назначен'))) {
       html.push('<div class="sect"><h3>По менеджерам</h3>' +
         tbl(['Менеджер', 'Заявок', 'Договоров', 'Конверсия', 'Выручка'], d.managers.map(function (r) {
           return [esc(r.key), r.leads, r.deals, r.conv + '%', money(r.revenue)];
@@ -385,7 +391,7 @@
     }
 
     // --- когда приходят заявки
-    html.push('<div class="sect"><h3>Когда приходят заявки</h3>' +
+    if (t.leads) html.push('<div class="sect"><h3>Когда приходят заявки</h3>' +
       '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:6px">По дням недели</div>' +
       miniChart(d.dow) +
       '<div style="font-size:12.5px;color:var(--ink-3);margin:14px 0 6px">По часам</div>' +
@@ -403,11 +409,11 @@
 
   function loadSummary(range) {
     if (range) STATE.range = range;
-    var req = { from: STATE.range.from || '', to: STATE.range.to || '',
-                sources: STATE.pick, platform: STATE.platform };
+    var req = { from: STATE.range.from || '', to: STATE.range.to || '', sources: STATE.pick };
     $('sumBody').textContent = 'Считаю…';
     google.script.run.withSuccessHandler(function (d) {
-      if (!d.totals.leads) {
+      var hasMoney = (d.ads || []).some(function (r) { return r.spend || r.balance; });
+      if (!d.totals.leads && !hasMoney) {
         $('sumBody').textContent = STATE.pick.length
           ? 'По выбранным каналам за этот период заявок нет.'
           : 'За этот период заявок нет.';
@@ -417,23 +423,6 @@
     }).withFailureHandler(function (e) {
       $('sumBody').textContent = 'Ошибка: ' + e.message;
     }).apiStats(req);
-  }
-
-  /* --- рекламные площадки --- */
-  function renderPlatforms() {
-    var items = [''].concat(STATE.platforms);
-    $('sPlatforms').innerHTML = items.map(function (name) {
-      return '<button class="chip' + (STATE.platform === name ? ' on' : '') +
-             '" data-plat="' + esc(name) + '">' + esc(name || 'Все площадки') + '</button>';
-    }).join('');
-
-    [].forEach.call($('sPlatforms').querySelectorAll('[data-plat]'), function (b) {
-      b.addEventListener('click', function () {
-        STATE.platform = b.dataset.plat;
-        renderPlatforms();
-        loadSummary(null);
-      });
-    });
   }
 
   /* --- выбор каналов галочками --- */
@@ -496,7 +485,6 @@
     $('sumModal').hidden = false;
     var r = periodRange('30');
     $('sFrom').value = r.from || ''; $('sTo').value = r.to || '';
-    renderPlatforms();
     renderPicks();
     loadSummary(r);
   });
