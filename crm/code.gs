@@ -21,6 +21,9 @@ function CONFIG_() {
     telegramToken: p.getProperty('TELEGRAM_TOKEN') || '',
     chatId:        p.getProperty('TELEGRAM_CHAT_ID') || '',
     threadId:      p.getProperty('TELEGRAM_THREAD_ID') || '',
+    // отдельная тема группы для утренних напоминаний
+    threadRemind:  p.getProperty('TELEGRAM_THREAD_REMINDERS') || '',
+    crmUrl:        p.getProperty('CRM_URL') || '',
     notifyEmail:   p.getProperty('NOTIFY_EMAIL') || '',
     // кто может открывать CRM: адреса Google-аккаунтов через запятую
     allowed:       (p.getProperty('ALLOWED_EMAILS') || '').split(',')
@@ -100,6 +103,8 @@ function col_(name) { return HEADERS.indexOf(name) + 1; }
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('ГК Сфера')
+    .addItem('Прислать напоминания сейчас', 'dailyDigestMenu')
+    .addSeparator()
     .addItem('Починить телефоны', 'fixPhonesMenu')
     .addSeparator()
     .addItem('Создать лист для импорта', 'makeImportSheetMenu')
@@ -123,6 +128,10 @@ function onOpen() {
     .addSeparator()
     .addItem('Первичная настройка (один раз)', 'setupMenu')
     .addToUi();
+}
+
+function dailyDigestMenu() {
+  SpreadsheetApp.getUi().alert(dailyDigest());
 }
 
 function fixPhonesMenu() {
