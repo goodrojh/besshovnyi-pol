@@ -200,17 +200,28 @@ function apiStats(range) {
   // ---- рекламные площадки: остаток, расход, цена заявки
   var balances = adBalances_();
   var spendPlat = spendByPlatform_(from, to);
+  var hist = moneyFromHistory_(from, to);
   var seen = {};
   Object.keys(byPlatform).forEach(function (k) { seen[k] = true; });
   Object.keys(spendPlat.by).forEach(function (k) { seen[k] = true; });
   Object.keys(balances).forEach(function (k) { seen[k] = true; });
+  Object.keys(hist).forEach(function (k) { seen[k] = true; });
 
   out.ads = Object.keys(seen).map(function (name) {
     var b = byPlatform[name] || { leads: 0, deals: 0, revenue: 0 };
+    var h = hist[name] || { spend: 0, topup: 0, start: null, end: null, points: 0 };
+
+    // ручные и загруженные строки расходов точнее; сверка остатка — запасной вариант
     var sp = spendPlat.by[name] || 0;
+    var byBalance = false;
+    if (!sp && h.spend) { sp = Math.round(h.spend); byBalance = true; }
+
     return {
       platform: name,
       balance: balances[name] === undefined ? null : balances[name],
+      start: h.start === null ? null : Math.round(h.start),
+      topup: Math.round(h.topup),
+      byBalance: byBalance,
       spend: sp,
       leads: b.leads, deals: b.deals, revenue: b.revenue,
       cpl: (sp && b.leads) ? Math.round(sp / b.leads) : 0,
@@ -290,6 +301,81 @@ function adBalances_() {
     });
   }
   return out;
+}
+
+/**
+ * Остаток площадки: текущее значение на лист «Площадки» и запись
+ * в историю. По истории потом считается, сколько потрачено:
+ * остаток упал — расход, вырос — пополнение.
+ */
+function writeBalance_(name, amount) {
+  var sh = makeSitesSheet();
+  var rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
+  var row = 0;
+  rows.forEach(function (r, i) { if (String(r[0]).trim() === name) row = i + 2; });
+  if (!row) { sh.appendRow([name, '', '']); row = sh.getLastRow(); }
+
+  var was = Number(sh.getRange(row, 2).getValue()) || 0;
+  sh.getRange(row, 2).setValue(amount);
+  sh.getRange(row, 3).setValue(new Date());
+
+  // в историю пишем только изменения, иначе лист забьётся одинаковыми строками
+  var log = makeBalanceSheet();
+  var first = log.getLastRow() < 2;
+  if (first || amount !== was) {
+    var delta = first ? 0 : amount - was;
+    log.appendRow([new Date(), name, amount, delta,
+                   delta > 0 ? 'пополнение' : (delta < 0 ? 'расход' : 'первая сверка')]);
+  }
+}
+
+function makeBalanceSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_BALANCE);
+  if (sh) return sh;
+  sh = ss.insertSheet(SHEET_BALANCE);
+  sh.getRange(1, 1, 1, 5)
+    .setValues([['Когда', 'Площадка', 'Остаток', 'Изменение', 'Что было']])
+    .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(1, 150);
+  sh.setColumnWidth(2, 150);
+  return sh;
+}
+
+/**
+ * Движение денег на площадках за период, посчитанное по сверкам остатка.
+ * Падение остатка считаем расходом, рост — пополнением.
+ */
+function moneyFromHistory_(from, to) {
+  var res = {};
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_BALANCE);
+  if (!sh || sh.getLastRow() < 2) return res;
+
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+  rows.sort(function (a, b) { return a[0] - b[0]; });
+
+  rows.forEach(function (r) {
+    var when = r[0];
+    if (!(when instanceof Date)) return;
+    var name = String(r[1] || '').trim();
+    if (!name) return;
+    var amount = Number(r[2]) || 0;
+    var delta = Number(r[3]) || 0;
+
+    var box = res[name] || (res[name] = { spend: 0, topup: 0, start: null, end: null, points: 0 });
+
+    if (from && when < from) { box.start = amount; return; }   // последняя сверка до периода
+    if (to && when > to) return;
+
+    if (box.start === null) box.start = amount - delta;        // остаток перед первой сверкой
+    box.end = amount;
+    box.points++;
+    if (delta < 0) box.spend += -delta;
+    if (delta > 0) box.topup += delta;
+  });
+
+  return res;
 }
 
 /**
@@ -553,16 +639,23 @@ function avitoBalance() {
   var real = Number(data.real || 0);
   var bonus = Number(data.bonus || 0);
 
-  if (real + bonus > 0) {
-    writeBalance_('Авито', real + bonus);
-    return 'Остаток на Авито: ' + (real + bonus) + ' ₽' +
-           (bonus ? ' (из них бонусов ' + bonus + ')' : '');
+  // на Авито два счёта: кошелёк и счёт продвижения объявлений
+  var promo = 0, promoNote = '';
+  var cpa = avitoPost_('/cpa/v3/balanceInfo', {}, { 'X-Source': 'gksphere-crm' });
+  if (cpa.code === 200) {
+    try { promo = Number(JSON.parse(cpa.text).balance || 0); } catch (e) {}
+  } else {
+    promoNote = ' (счёт продвижения не ответил: ' + cpa.code + ')';
   }
 
-  // ноль — либо кошелёк пуст, либо деньги лежат на счёте продвижения.
-  // Показываем оба ответа целиком, чтобы понять, откуда брать сумму.
-  var cpa = avitoPost_('/cpa/v3/balanceInfo', {}, { 'X-Source': 'gksphere-crm' });
-  return 'Кошелёк вернул ноль.' +
+  var total = real + bonus + promo;
+  if (total > 0) {
+    writeBalance_('Авито', total);
+    return 'Остаток на Авито: ' + total + ' ₽' + promoNote +
+           '\nКошелёк: ' + (real + bonus) + ' ₽, счёт продвижения: ' + promo + ' ₽';
+  }
+
+  return 'На счетах Авито ноль.' +
          '\n\nОтвет кошелька (' + res.code + '): ' + res.text.slice(0, 300) +
          '\n\nСчёт продвижения (' + cpa.code + '): ' + cpa.text.slice(0, 300) +
          '\n\nЕсли обе суммы нулевые — на счетах Авито действительно пусто, ' +

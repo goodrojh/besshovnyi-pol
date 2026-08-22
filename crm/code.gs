@@ -36,6 +36,7 @@ var SHEET_LOG    = 'История';
 var SHEET_IMPORT = 'Импорт';
 var SHEET_SPEND  = 'Расходы';
 var SHEET_SITES  = 'Площадки';
+var SHEET_BALANCE = 'Баланс';
 var SHEET_AVITO  = 'Авито';
 
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];

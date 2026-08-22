@@ -319,15 +319,19 @@
         kpi(money(a.cpa), 'цена договора, ₽') +
         kpi(pct(a.romi), 'окупаемость', (a.romi !== null && a.romi < 0) ? 'warn' : 'good') +
         '</div>' +
-        tbl(['Площадка', 'Остаток', 'Потрачено', 'Заявок', 'Цена заявки', 'Договоров',
-             'Цена договора', 'Выручка', 'ROMI'],
+        tbl(['Площадка', 'Было на начало', 'Пополнено', 'Потрачено', 'Остаток сейчас',
+             'Заявок', 'Цена заявки', 'Договоров', 'Цена договора', 'Выручка', 'ROMI'],
           d.ads.map(function (r) {
-            return [esc(r.platform), r.balance === null ? '—' : money(r.balance), money(r.spend),
+            return [esc(r.platform),
+                    r.start === null ? '—' : money(r.start),
+                    money(r.topup),
+                    money(r.spend) + (r.byBalance ? ' <span class="muted">≈</span>' : ''),
+                    r.balance === null ? '—' : money(r.balance),
                     r.leads, money(r.cpl), r.deals, money(r.cpa), money(r.revenue), pct(r.romi)];
           })) +
         '<div class="muted" style="font-size:12.5px;margin-top:8px">' +
-        'Остаток на Авито обновляется сам. Остальные площадки — лист «Площадки». ' +
-        'Траты вносятся на листе «Расходы».</div></div>');
+        'Значок ≈ означает, что расход посчитан по изменению остатка на площадке, ' +
+        'а не по внесённым тратам. Пополнения из расхода вычтены.</div></div>');
     }
 
     // --- источники и деньги

@@ -114,17 +114,6 @@ function yandexBalance() {
   return 'Остаток в Директе: ' + amount + ' ₽';
 }
 
-/** Общая запись остатка в лист «Площадки». */
-function writeBalance_(name, amount) {
-  var sh = makeSitesSheet();
-  var rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
-  var row = 0;
-  rows.forEach(function (r, i) { if (String(r[0]).trim() === name) row = i + 2; });
-  if (!row) { sh.appendRow([name, '', '']); row = sh.getLastRow(); }
-  sh.getRange(row, 2).setValue(amount);
-  sh.getRange(row, 3).setValue(new Date());
-}
-
 /**
  * Расходы Директа по дням за последние N дней — в лист «Расходы».
  * Даты, которые уже внесены, пропускаются, поэтому повторный запуск
