@@ -110,6 +110,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('ГК Сфера')
     .addItem('Доступ: ссылки для сотрудников', 'accessLinksMenu')
+    .addItem('Доступ: проверить ссылку', 'accessCheckMenu')
     .addSeparator()
     .addItem('Прислать напоминания сейчас', 'dailyDigestMenu')
     .addSeparator()
@@ -147,6 +148,14 @@ function accessLinksMenu() {
     'Чтобы добавить человека: впишите имя и роль (владелец, менеджер, аналитик) ' +
     'в свободную строку и запустите этот пункт меню ещё раз — ключ и ссылка ' +
     'создадутся сами.');
+}
+
+function accessCheckMenu() {
+  var ui = SpreadsheetApp.getUi();
+  var ask = ui.prompt('Проверка ссылки',
+    'Вставьте ссылку, которую отправляли сотруднику:', ui.ButtonSet.OK_CANCEL);
+  if (ask.getSelectedButton() !== ui.Button.OK) return;
+  ui.alert(accessCheck(ask.getResponseText()));
 }
 
 function dailyDigestMenu() {

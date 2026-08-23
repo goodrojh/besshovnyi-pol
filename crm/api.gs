@@ -17,13 +17,16 @@ function doGet(e) {
   var role = roleFor_({ __k: key });
 
   if (!role) {
+    var why = key
+      ? 'Ключ <b>' + key.replace(/[<>]/g, '') + '</b> не найден в листе «Доступ». ' +
+        'Возможно, ссылка скопирована не целиком или ключ был перевыпущен.'
+      : 'В ссылке нет ключа. Личная ссылка заканчивается на <b>?k=</b> и набор букв.';
+
     return HtmlService.createHtmlOutput(
       '<div style="font:16px/1.5 Arial;padding:40px;text-align:center;color:#0f1820">' +
-      '<h2>Нет доступа</h2>' +
-      '<p>Откройте CRM по личной ссылке, которую вам выдали.<br>' +
-      'Она заканчивается на <b>?k=</b> и набор букв — без этой части вход не работает.</p>' +
-      '<p style="color:#74828e;font-size:14px">Если ссылки нет — попросите её у владельца: ' +
-      'меню «ГК Сфера» → «Доступ: ссылки для сотрудников».</p></div>');
+      '<h2>Нет доступа</h2><p>' + why + '</p>' +
+      '<p style="color:#74828e;font-size:14px">Владельцу: меню «ГК Сфера» → ' +
+      '«Доступ: проверить ссылку» покажет, что не так.</p></div>');
   }
 
   var t = HtmlService.createTemplateFromFile('CRM');
@@ -80,6 +83,49 @@ function makeAccessSheet() {
   return sh;
 }
 
+/**
+ * Разбор чужой ссылки: показывает, дойдёт ли по ней человек до CRM.
+ * Нужна, когда сотрудник говорит «не пускает», а причина не видна.
+ */
+function accessCheck(link) {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ACCESS);
+  var lines = [];
+
+  if (!sh || sh.getLastRow() < 2) {
+    return 'Лист «Доступ» пуст. Меню → «Доступ: ссылки для сотрудников».';
+  }
+
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues()
+               .filter(function (r) { return String(r[0]).trim(); });
+  lines.push('Сотрудников в листе «Доступ»: ' + rows.length);
+  rows.forEach(function (r) {
+    lines.push('  • ' + r[0] + ' — ' + (r[1] || 'роль не указана') +
+               ' — ключ ' + (normKey_(r[2]) ? 'есть' : 'НЕ ВЫДАН'));
+  });
+
+  var m = String(link || '').match(/[?&]k=([^&#\s]+)/);
+  // если это ссылка, но без «k=», то ключа нет; иначе считаем, что вставили сам ключ
+  var raw = String(link || '');
+  var key = m ? m[1] : (/https?:|\//.test(raw) ? '' : normKey_(raw));
+  lines.push('');
+  lines.push('Ключ из ссылки: ' + (key || 'не найден'));
+
+  if (!key) {
+    lines.push('В ссылке нет части «?k=…». Скопируйте ссылку из колонки «Личная ссылка» целиком.');
+    return lines.join('\n');
+  }
+
+  var row = accessRow_(key);
+  if (!row) {
+    lines.push('РЕЗУЛЬТАТ: такого ключа в листе нет — по этой ссылке не пустит.');
+    lines.push('Скорее всего, ссылка старая: ключ перевыпускали. Отправьте свежую.');
+  } else {
+    lines.push('РЕЗУЛЬТАТ: ключ принадлежит «' + row[0] + '», роль — ' + roleByKey_(key) + '.');
+    lines.push('По этой ссылке вход работает.');
+  }
+  return lines.join('\n');
+}
+
 function newKey_() {
   var abc = 'abcdefghijkmnpqrstuvwxyz23456789';
   var out = '';
@@ -87,21 +133,31 @@ function newKey_() {
   return out;
 }
 
-/** Роль по личному ключу из ссылки. */
-function roleByKey_(key) {
-  key = String(key || '').trim();
-  if (!key) return '';
+/** Ключ мог приехать с пробелом, переносом строки или в другом регистре. */
+function normKey_(v) {
+  return String(v == null ? '' : v).replace(/\s+/g, '').toLowerCase();
+}
+
+/** Строка сотрудника по личному ключу: [имя, роль, ключ] или null. */
+function accessRow_(key) {
+  key = normKey_(key);
+  if (!key) return null;
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ACCESS);
-  if (!sh || sh.getLastRow() < 2) return '';
+  if (!sh || sh.getLastRow() < 2) return null;
 
   var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
   for (var i = 0; i < rows.length; i++) {
-    if (String(rows[i][2]).trim() === key) {
-      var role = String(rows[i][1]).trim().toLowerCase();
-      return ROLES.indexOf(role) === -1 ? 'менеджер' : role;
-    }
+    if (normKey_(rows[i][2]) === key) return rows[i];
   }
-  return '';
+  return null;
+}
+
+/** Роль по личному ключу из ссылки. */
+function roleByKey_(key) {
+  var row = accessRow_(key);
+  if (!row) return '';
+  var role = String(row[1]).trim().toLowerCase();
+  return ROLES.indexOf(role) === -1 ? 'менеджер' : role;
 }
 
 /** Роль по почте — работает для владельца и для аккаунтов того же домена. */
@@ -138,15 +194,8 @@ function roleFor_(payload) {
 
 /** Имя сотрудника из листа «Доступ» — им подписываются заметки. */
 function nameByKey_(key) {
-  key = String(key || '').trim();
-  if (!key) return '';
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ACCESS);
-  if (!sh || sh.getLastRow() < 2) return '';
-  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
-  for (var i = 0; i < rows.length; i++) {
-    if (String(rows[i][2]).trim() === key) return String(rows[i][0]).trim();
-  }
-  return '';
+  var row = accessRow_(key);
+  return row ? String(row[0]).trim() : '';
 }
 
 function guard_(payload) {
