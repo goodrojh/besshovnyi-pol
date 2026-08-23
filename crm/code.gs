@@ -41,6 +41,9 @@ var SHEET_SPEND  = 'Расходы';
 var SHEET_SITES  = 'Площадки';
 var SHEET_BALANCE = 'Баланс';
 var SHEET_ACCESS  = 'Доступ';
+
+// Видно в углу CRM. По ней сразу ясно, свежая ли версия развёрнута.
+var CODE_VERSION = '23.08.2026';
 var SHEET_AVITO  = 'Авито';
 
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];
@@ -112,6 +115,8 @@ function onOpen() {
     .addItem('Доступ: ссылки для сотрудников', 'accessLinksMenu')
     .addItem('Доступ: проверить ссылку', 'accessCheckMenu')
     .addSeparator()
+    .addItem('Проверка системы', 'selfCheckMenu')
+    .addSeparator()
     .addItem('Прислать напоминания сейчас', 'dailyDigestMenu')
     .addSeparator()
     .addItem('Починить телефоны', 'fixPhonesMenu')
@@ -148,6 +153,10 @@ function accessLinksMenu() {
     'Чтобы добавить человека: впишите имя и роль (владелец, менеджер, аналитик) ' +
     'в свободную строку и запустите этот пункт меню ещё раз — ключ и ссылка ' +
     'создадутся сами.');
+}
+
+function selfCheckMenu() {
+  SpreadsheetApp.getUi().alert(selfCheck());
 }
 
 function accessCheckMenu() {

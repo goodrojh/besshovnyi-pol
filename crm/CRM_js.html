@@ -38,7 +38,9 @@
       STATE.owner = !!res.owner;
       STATE.role = res.role || STATE.role;
       applyRole();
-      $('who').textContent = res.me || '';
+      // версия рядом с именем: сразу видно, свежий ли код развёрнут
+      $('who').textContent = (res.me || nameOfRole(res.role)) +
+                             (res.version ? ' · v' + res.version : '');
       fillSelects();
       apply();
     }).withFailureHandler(function (e) {
@@ -230,6 +232,10 @@
   }
 
   /* Аналитику отдаём только на просмотр: кнопки изменения прячем. */
+  function nameOfRole(role) {
+    return role ? 'вход по ссылке: ' + role : '';
+  }
+
   function applyRole() {
     var readOnly = STATE.role === 'аналитик';
     $('addBtn').hidden = readOnly;

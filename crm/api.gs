@@ -126,6 +126,110 @@ function accessCheck(link) {
   return lines.join('\n');
 }
 
+/**
+ * Проверка системы перед тем, как отдавать ссылки людям.
+ * Показывает всё, что обычно ломается: пустые ключи, забытые свойства,
+ * невыключенные расписания, недоступный Telegram.
+ */
+function selfCheck() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var p = PropertiesService.getScriptProperties();
+  var out = ['Версия кода в таблице: ' + CODE_VERSION, ''];
+  var problems = 0;
+
+  function ok(text)  { out.push('  [ок]   ' + text); }
+  function bad(text) { out.push('  [!]    ' + text); problems++; }
+
+  // --- листы
+  out.push('ЛИСТЫ');
+  [SHEET_LEADS, SHEET_LOG, SHEET_ACCESS].forEach(function (name) {
+    ss.getSheetByName(name) ? ok(name) : bad(name + ' — нет, запустите «Первичная настройка»');
+  });
+  [SHEET_SPEND, SHEET_SITES, SHEET_BALANCE].forEach(function (name) {
+    ss.getSheetByName(name) ? ok(name) : out.push('  [—]    ' + name + ' — не создан, аналитика по рекламе не считается');
+  });
+
+  var leads = ss.getSheetByName(SHEET_LEADS);
+  out.push('  Заявок в базе: ' + (leads && leads.getLastRow() > 1 ? leads.getLastRow() - 1 : 0));
+
+  // --- доступ
+  out.push('');
+  out.push('ДОСТУП');
+  var base = p.getProperty('CRM_URL') || '';
+  if (!base) bad('CRM_URL не задан — личные ссылки не собрать');
+  else if (base.indexOf('/exec') === -1) bad('CRM_URL не похож на адрес развёртывания: ' + base);
+  else ok('CRM_URL задан');
+
+  var acc = ss.getSheetByName(SHEET_ACCESS);
+  if (!acc || acc.getLastRow() < 2) {
+    bad('Лист «Доступ» пуст — меню «Доступ: ссылки для сотрудников»');
+  } else {
+    var rows = acc.getRange(2, 1, acc.getLastRow() - 1, 4).getValues()
+                  .filter(function (r) { return String(r[0]).trim(); });
+    if (!rows.length) bad('В листе «Доступ» нет ни одного сотрудника');
+    rows.forEach(function (r) {
+      var name = String(r[0]).trim();
+      var role = String(r[1]).trim().toLowerCase();
+      if (!normKey_(r[2])) { bad(name + ' — ключ не выдан'); return; }
+      if (ROLES.indexOf(role) === -1) { bad(name + ' — роль «' + r[1] + '» не из списка'); return; }
+      if (String(r[3]).indexOf('?k=') === -1) { bad(name + ' — ссылка не собрана'); return; }
+      ok(name + ' — ' + role + ', ссылка готова');
+    });
+  }
+
+  // --- свойства
+  out.push('');
+  out.push('КЛЮЧИ И НАСТРОЙКИ');
+  [['TELEGRAM_TOKEN', 'уведомления в Telegram'],
+   ['TELEGRAM_CHAT_ID', 'группа для заявок'],
+   ['FORM_TOKEN', 'защита формы на сайте'],
+   ['OWNER_EMAIL', 'кто владелец']].forEach(function (pair) {
+    p.getProperty(pair[0]) ? ok(pair[0]) : bad(pair[0] + ' не задан — ' + pair[1]);
+  });
+  [['TELEGRAM_THREAD_REMINDERS', 'тема для напоминаний'],
+   ['AVITO_CLIENT_ID', 'Авито'],
+   ['YANDEX_TOKEN', 'Яндекс Директ'],
+   ['NOTIFY_EMAIL', 'дубли заявок на почту']].forEach(function (pair) {
+    p.getProperty(pair[0]) ? ok(pair[0]) : out.push('  [—]    ' + pair[0] + ' не задан — ' + pair[1] + ' выключен');
+  });
+
+  // --- расписания
+  out.push('');
+  out.push('РАСПИСАНИЯ');
+  var jobs = {};
+  ScriptApp.getProjectTriggers().forEach(function (t) { jobs[t.getHandlerFunction()] = true; });
+  [['dailyDigest', 'утренние напоминания'],
+   ['avitoPull', 'сбор обращений с Авито'],
+   ['yandexDaily', 'остаток и расходы Директа']].forEach(function (pair) {
+    jobs[pair[0]] ? ok(pair[1]) : out.push('  [—]    ' + pair[1] + ' — выключено');
+  });
+
+  // --- живой Telegram
+  out.push('');
+  out.push('СВЯЗЬ');
+  var cfg = CONFIG_();
+  if (!cfg.telegramToken) {
+    out.push('  [—]    Telegram не настроен');
+  } else {
+    try {
+      var res = UrlFetchApp.fetch('https://api.telegram.org/bot' + cfg.telegramToken + '/getMe',
+                                  { muteHttpExceptions: true });
+      var body = JSON.parse(res.getContentText());
+      body.ok ? ok('Telegram отвечает: @' + body.result.username)
+              : bad('Telegram не принял токен: ' + res.getContentText().slice(0, 120));
+    } catch (e) {
+      bad('Telegram недоступен: ' + e.message);
+    }
+  }
+
+  out.push('');
+  out.push(problems ? ('НАДО ПОПРАВИТЬ: ' + problems)
+                    : 'Всё в порядке — ссылки можно раздавать.');
+  out.push('');
+  out.push('Если в CRM внизу версия не ' + CODE_VERSION + ' — вы забыли переразвернуть.');
+  return out.join('\n');
+}
+
 function newKey_() {
   var abc = 'abcdefghijkmnpqrstuvwxyz23456789';
   var out = '';
@@ -181,14 +285,18 @@ function roleByEmail_() {
  */
 var CURRENT_WHO = '';   // кто выполняет текущий запрос: почта или роль по ключу
 
+/**
+ * Если в ссылке есть ключ — роль берём строго по нему, даже для владельца.
+ * Так владелец может открыть чужую ссылку и увидеть ровно то же, что сотрудник,
+ * не дёргая его ради проверки.
+ */
 function roleFor_(payload) {
-  var byEmail = roleByEmail_();
-  var role = byEmail;
-  if (byEmail !== 'владелец') {
-    role = roleByKey_(payload && payload.__k) || byEmail;
-  }
-  CURRENT_WHO = (Session.getActiveUser().getEmail() || '') ||
-                (role ? nameByKey_(payload && payload.__k) || role : '');
+  var key = payload && payload.__k;
+  var role = key ? roleByKey_(key) : roleByEmail_();
+
+  CURRENT_WHO = (key ? nameByKey_(key) : '') ||
+                (Session.getActiveUser().getEmail() || '') ||
+                role || '';
   return role;
 }
 
@@ -246,7 +354,8 @@ function apiList(filter) {
   var base = { statuses: STATUSES, sources: SOURCES, reasons: REASONS,
                groups: SOURCE_GROUPS, platforms: platformNames_(),
                me: Session.getActiveUser().getEmail() || '',
-               role: roleFor_(filter), owner: isOwner_(filter) };
+               role: roleFor_(filter), owner: isOwner_(filter),
+               version: CODE_VERSION };
   if (!sh || sh.getLastRow() < 2) { base.leads = []; return base; }
 
   var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
