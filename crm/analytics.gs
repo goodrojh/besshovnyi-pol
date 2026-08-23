@@ -11,7 +11,7 @@
    ============================================================ */
 
 function apiStats(range) {
-  guard_();
+  guard_(range);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SHEET_LEADS);
 

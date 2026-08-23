@@ -6,6 +6,10 @@
 <?!= include('CRM_css'); ?>
 </head>
 <body>
+<script>
+  // роль и личный ключ приходят из ссылки: google.script.run адрес не передаёт
+  window.__CRM = { role: '<?= role ?>', key: '<?= key ?>' };
+</script>
 <div class="wrap">
 
   <header>

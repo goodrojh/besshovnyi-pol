@@ -12,14 +12,24 @@ function include(name) {
   return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
-function doGet() {
-  if (!isAllowed_()) {
+function doGet(e) {
+  var key = (e && e.parameter && e.parameter.k) ? String(e.parameter.k) : '';
+  var role = roleFor_({ __k: key });
+
+  if (!role) {
     return HtmlService.createHtmlOutput(
-      '<div style="font:16px/1.5 Arial;padding:40px;text-align:center">' +
-      '<h2>Нет доступа</h2><p>Этот Google-аккаунт не в списке разрешённых.<br>' +
-      'Войдите под рабочим аккаунтом или попросите добавить вас.</p></div>');
+      '<div style="font:16px/1.5 Arial;padding:40px;text-align:center;color:#0f1820">' +
+      '<h2>Нет доступа</h2>' +
+      '<p>Откройте CRM по личной ссылке, которую вам выдали.<br>' +
+      'Она заканчивается на <b>?k=</b> и набор букв — без этой части вход не работает.</p>' +
+      '<p style="color:#74828e;font-size:14px">Если ссылки нет — попросите её у владельца: ' +
+      'меню «ГК Сфера» → «Доступ: ссылки для сотрудников».</p></div>');
   }
-  return HtmlService.createTemplateFromFile('CRM').evaluate()
+
+  var t = HtmlService.createTemplateFromFile('CRM');
+  t.role = role;
+  t.key = key;
+  return t.evaluate()
     .setTitle('CRM — ГК Сфера')
     // Apps Script принимает только эти метатеги, остальные ломают страницу
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
@@ -27,35 +37,136 @@ function doGet() {
     .addMetaTag('mobile-web-app-capable', 'yes');
 }
 
-function isAllowed_() {
-  var cfg = CONFIG_();
-  if (!cfg.allowed.length) return true; // список не задан — пускаем всех, кто открыл ссылку
+/* ============================================================
+   ДОСТУП
+   Google отдаёт почту вошедшего только владельцу скрипта: у веб-приложения,
+   которое работает «от моего имени», для чужих личных аккаунтов почта пустая.
+   Поэтому у каждого сотрудника своя ссылка с личным ключом, а почта — как
+   запасной способ узнать своих.
+   ============================================================ */
+
+var ROLES = ['владелец', 'менеджер', 'аналитик'];
+
+function makeAccessSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_ACCESS);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_ACCESS);
+    sh.getRange(1, 1, 1, 4).setValues([['Имя', 'Роль', 'Ключ', 'Личная ссылка']])
+      .setFontWeight('bold').setBackground('#0f1820').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+    sh.setColumnWidth(1, 180); sh.setColumnWidth(2, 130);
+    sh.setColumnWidth(3, 220); sh.setColumnWidth(4, 460);
+    sh.getRange(2, 1, 3, 2).setValues([
+      ['Владелец', 'владелец'], ['Менеджер', 'менеджер'], ['Аналитик', 'аналитик']
+    ]);
+  }
+  sh.getRange(2, 2, sh.getMaxRows() - 1, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(ROLES, true).build());
+
+  var base = PropertiesService.getScriptProperties().getProperty('CRM_URL') || '';
+  if (!base) { try { base = ScriptApp.getService().getUrl(); } catch (e) {} }
+
+  var last = sh.getLastRow();
+  if (last > 1) {
+    var rows = sh.getRange(2, 1, last - 1, 4).getValues();
+    rows.forEach(function (r, i) {
+      if (!String(r[0]).trim()) return;                 // пустая строка — пропускаем
+      if (!String(r[2]).trim()) r[2] = newKey_();       // ключа нет — выдаём
+      r[3] = base ? (base + '?k=' + r[2]) : 'впишите CRM_URL в свойства скрипта';
+    });
+    sh.getRange(2, 1, rows.length, 4).setValues(rows);
+  }
+  return sh;
+}
+
+function newKey_() {
+  var abc = 'abcdefghijkmnpqrstuvwxyz23456789';
+  var out = '';
+  for (var i = 0; i < 18; i++) out += abc.charAt(Math.floor(Math.random() * abc.length));
+  return out;
+}
+
+/** Роль по личному ключу из ссылки. */
+function roleByKey_(key) {
+  key = String(key || '').trim();
+  if (!key) return '';
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ACCESS);
+  if (!sh || sh.getLastRow() < 2) return '';
+
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][2]).trim() === key) {
+      var role = String(rows[i][1]).trim().toLowerCase();
+      return ROLES.indexOf(role) === -1 ? 'менеджер' : role;
+    }
+  }
+  return '';
+}
+
+/** Роль по почте — работает для владельца и для аккаунтов того же домена. */
+function roleByEmail_() {
   var me = (Session.getActiveUser().getEmail() || '').toLowerCase();
-  return cfg.allowed.indexOf(me) !== -1;
+  if (!me) return '';
+
+  var p = PropertiesService.getScriptProperties();
+  var set = (p.getProperty('OWNER_EMAIL') || '').toLowerCase().trim();
+  var owner = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
+  if (set ? me === set : (owner && me === owner)) return 'владелец';
+
+  var cfg = CONFIG_();
+  if (!cfg.allowed.length || cfg.allowed.indexOf(me) !== -1) return 'менеджер';
+  return '';
 }
 
 /**
- * Владелец — тот, от чьего имени работает скрипт, то есть хозяин таблицы.
- * Ему одному можно удалять заявки и править дату создания.
- * Можно задать явно: свойство скрипта OWNER_EMAIL.
+ * Кто к нам пришёл. Ключ приходит вместе с запросом от интерфейса:
+ * страница знает его из адреса, а google.script.run адрес не передаёт.
  */
-function isOwner_() {
-  var me = (Session.getActiveUser().getEmail() || '').toLowerCase();
-  if (!me) return false;
-  var set = (PropertiesService.getScriptProperties().getProperty('OWNER_EMAIL') || '')
-              .toLowerCase().trim();
-  if (set) return me === set;
-  var owner = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
-  return !!owner && me === owner;
+var CURRENT_WHO = '';   // кто выполняет текущий запрос: почта или роль по ключу
+
+function roleFor_(payload) {
+  var byEmail = roleByEmail_();
+  var role = byEmail;
+  if (byEmail !== 'владелец') {
+    role = roleByKey_(payload && payload.__k) || byEmail;
+  }
+  CURRENT_WHO = (Session.getActiveUser().getEmail() || '') ||
+                (role ? nameByKey_(payload && payload.__k) || role : '');
+  return role;
 }
 
-function ownerGuard_() {
-  if (!isOwner_()) throw new Error('Это может делать только владелец CRM');
+/** Имя сотрудника из листа «Доступ» — им подписываются заметки. */
+function nameByKey_(key) {
+  key = String(key || '').trim();
+  if (!key) return '';
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ACCESS);
+  if (!sh || sh.getLastRow() < 2) return '';
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][2]).trim() === key) return String(rows[i][0]).trim();
+  }
+  return '';
 }
 
-function guard_() {
-  if (!isAllowed_()) throw new Error('Нет доступа');
+function guard_(payload) {
+  if (!roleFor_(payload)) throw new Error('Нет доступа');
 }
+
+function writeGuard_(payload) {
+  var role = roleFor_(payload);
+  if (role !== 'владелец' && role !== 'менеджер') {
+    throw new Error('У этой роли только просмотр');
+  }
+}
+
+function ownerGuard_(payload) {
+  if (roleFor_(payload) !== 'владелец') {
+    throw new Error('Это может делать только владелец CRM');
+  }
+}
+
+function isOwner_(payload) { return roleFor_(payload) === 'владелец'; }
 
 function rowToObj_(r) {
   var o = {};
@@ -80,12 +191,13 @@ function fmtDates_(o) {
 
 /** Список заявок для интерфейса. */
 function apiList(filter) {
-  guard_();
   filter = filter || {};
+  guard_(filter);
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var base = { statuses: STATUSES, sources: SOURCES, reasons: REASONS,
                groups: SOURCE_GROUPS, platforms: platformNames_(),
-               me: Session.getActiveUser().getEmail(), owner: isOwner_() };
+               me: Session.getActiveUser().getEmail() || '',
+               role: roleFor_(filter), owner: isOwner_(filter) };
   if (!sh || sh.getLastRow() < 2) { base.leads = []; return base; }
 
   var values = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
@@ -139,8 +251,8 @@ function apiList(filter) {
  * План на сегодня: кому обещали позвонить сегодня и кого уже просрочили.
  * Заявки в статусах «Договор» и «Отказ» не показываем — они закрыты.
  */
-function apiToday() {
-  guard_();
+function apiToday(ctx) {
+  guard_(ctx);
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var res = { today: [], overdue: [], noPlan: 0 };
   if (!sh || sh.getLastRow() < 2) return res;
@@ -176,7 +288,7 @@ function apiToday() {
 
 /** Сохранение карточки: статус, сумма, дата следующего контакта, ответственный. */
 function apiSave(patch) {
-  guard_();
+  writeGuard_(patch);
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var row = Number(patch.__row);
   if (!row || row < 2) throw new Error('Заявка не найдена');
@@ -187,7 +299,7 @@ function apiSave(patch) {
   // тип объекта и площадь меняет только владелец: от них зависит аналитика
   ['Тип объекта', 'Площадь, м²'].forEach(function (h) {
     if (patch[h] === undefined) return;
-    ownerGuard_();
+    ownerGuard_(patch);
     var c = col_(h);
     var was = sh.getRange(row, c).getValue();
     if (String(was) === String(patch[h])) return;
@@ -209,7 +321,7 @@ function apiSave(patch) {
   // дату заявки правит только владелец: вручную занесённые заявки
   // иначе встают одним днём и перекашивают статистику
   if (patch['Создана'] !== undefined && String(patch['Создана'])) {
-    ownerGuard_();
+    ownerGuard_(patch);
     var when = parseInput_(patch['Создана']);
     if (when) {
       var cc = col_('Создана');
@@ -271,9 +383,8 @@ function fmtWhen_(d) {
  * Удаление заявки. Только владелец и только с подтверждением ID —
  * чтобы случайный сдвиг строк не увёл нож не туда.
  */
-function apiDelete(row, id) {
-  guard_();
-  ownerGuard_();
+function apiDelete(row, id, ctx) {
+  ownerGuard_(ctx);
 
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   row = Number(row);
@@ -293,15 +404,15 @@ function apiDelete(row, id) {
 }
 
 /** Добавить заметку — дописывается сверху с датой и автором. */
-function apiAddNote(row, text) {
-  guard_();
+function apiAddNote(row, text, ctx) {
+  writeGuard_(ctx);
   text = String(text || '').trim();
   if (!text) return apiGetOne(row);
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   var c = col_('Заметки');
   var was = String(sh.getRange(row, c).getValue() || '');
   var stamp = Utilities.formatDate(new Date(), 'Europe/Moscow', 'dd.MM.yyyy HH:mm');
-  var who = (Session.getActiveUser().getEmail() || '').split('@')[0];
+  var who = (CURRENT_WHO || 'сотрудник').split('@')[0];
   var line = '[' + stamp + ' · ' + who + '] ' + text;
   sh.getRange(row, c).setValue(was ? line + '\n' + was : line);
   markFirstTouch_(sh, row);
@@ -312,7 +423,7 @@ function apiAddNote(row, text) {
 
 /** Заявка, заведённая руками — из мессенджера или по звонку. */
 function apiCreate(data) {
-  guard_();
+  writeGuard_(data);
   if (!String(data['Телефон'] || '').replace(/\D/g, '')) throw new Error('Нужен телефон');
   var lead = saveLeadRow_(data);
   logAction_(lead['ID'], 'заявка заведена вручную');
@@ -330,12 +441,12 @@ function apiGetOne(row) {
 function logAction_(leadId, what) {
   var log = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOG);
   if (!log) return;
-  log.appendRow([new Date(), Session.getActiveUser().getEmail() || '—', leadId, what]);
+  log.appendRow([new Date(), CURRENT_WHO || '—', leadId, what]);
 }
 
 /** Сводка для директолога: заявки и суммы по источникам. */
 function apiSummary(range) {
-  guard_();
+  guard_(range);
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LEADS);
   if (!sh || sh.getLastRow() < 2) return { rows: [], total: { leads: 0, deals: 0, sum: 0 } };
 

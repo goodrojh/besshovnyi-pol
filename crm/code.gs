@@ -40,6 +40,7 @@ var SHEET_IMPORT = 'Импорт';
 var SHEET_SPEND  = 'Расходы';
 var SHEET_SITES  = 'Площадки';
 var SHEET_BALANCE = 'Баланс';
+var SHEET_ACCESS  = 'Доступ';
 var SHEET_AVITO  = 'Авито';
 
 var STATUSES = ['Новая', 'В работе', 'Замер', 'Смета', 'Договор', 'Отказ'];
@@ -108,6 +109,8 @@ function col_(name) { return HEADERS.indexOf(name) + 1; }
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('ГК Сфера')
+    .addItem('Доступ: ссылки для сотрудников', 'accessLinksMenu')
+    .addSeparator()
     .addItem('Прислать напоминания сейчас', 'dailyDigestMenu')
     .addSeparator()
     .addItem('Починить телефоны', 'fixPhonesMenu')
@@ -133,6 +136,17 @@ function onOpen() {
     .addSeparator()
     .addItem('Первичная настройка (один раз)', 'setupMenu')
     .addToUi();
+}
+
+function accessLinksMenu() {
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(makeAccessSheet());
+  SpreadsheetApp.getUi().alert(
+    'Лист «Доступ» готов.\n\n' +
+    'В нём личные ссылки на CRM для каждого сотрудника. ' +
+    'Отправьте каждому его строку — по чужой ссылке зайти не получится.\n\n' +
+    'Чтобы добавить человека: впишите имя и роль (владелец, менеджер, аналитик) ' +
+    'в свободную строку и запустите этот пункт меню ещё раз — ключ и ссылка ' +
+    'создадутся сами.');
 }
 
 function dailyDigestMenu() {

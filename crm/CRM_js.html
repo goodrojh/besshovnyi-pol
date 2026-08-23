@@ -6,6 +6,16 @@
                 srcPick: [], // отмеченные источники в списке заявок
                 platforms: [] };
 
+  var ACCESS = window.__CRM || { role: '', key: '' };
+  STATE.role = ACCESS.role;
+
+  /* Ключ подмешиваем в каждый запрос: сервер по нему узнаёт, кто пришёл. */
+  function withKey(o) {
+    o = o || {};
+    o.__k = ACCESS.key;
+    return o;
+  }
+
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function toast(msg) {
@@ -26,13 +36,15 @@
       STATE.groups = res.groups || [];
       STATE.platforms = res.platforms || [];
       STATE.owner = !!res.owner;
+      STATE.role = res.role || STATE.role;
+      applyRole();
       $('who').textContent = res.me || '';
       fillSelects();
       apply();
     }).withFailureHandler(function (e) {
       busy(false);
       $('list').innerHTML = '<div class="empty">Не удалось загрузить: ' + esc(e.message) + '</div>';
-    }).apiList({});
+    }).apiList(withKey({}));
   }
 
   /* Пересчёт списка и счётчиков без обращения к серверу. */
@@ -217,6 +229,15 @@
     return many;
   }
 
+  /* Аналитику отдаём только на просмотр: кнопки изменения прячем. */
+  function applyRole() {
+    var readOnly = STATE.role === 'аналитик';
+    $('addBtn').hidden = readOnly;
+    $('cSave').hidden = readOnly;
+    $('cAddNote').hidden = readOnly;
+    $('cNote').parentElement.hidden = readOnly;
+  }
+
   function render() {
     if (!STATE.leads.length) {
       $('list').innerHTML = '<div class="empty">Заявок нет. Как только придёт первая — появится здесь.</div>';
@@ -337,7 +358,7 @@
       busy(false); btn.disabled = false; applyUpdated(res); toast('Сохранено');
     }).withFailureHandler(function (e) {
       busy(false); btn.disabled = false; toast('Ошибка: ' + e.message);
-    }).apiSave(patch);
+    }).apiSave(withKey(patch));
   });
 
   $('cAddNote').addEventListener('click', function () {
@@ -578,7 +599,7 @@
       renderStats(d);
     }).withFailureHandler(function (e) {
       $('sumBody').textContent = 'Ошибка: ' + e.message;
-    }).apiStats(req);
+    }).apiStats(withKey(req));
   }
 
   /* --- выбор каналов галочками --- */
@@ -680,7 +701,7 @@
     }).withFailureHandler(function (e) {
       btn.disabled = false;
       toast('Не вышло: ' + e.message);
-    }).apiDelete(l.__row, l['ID']);
+    }).apiDelete(l.__row, l['ID'], withKey({}));
   });
 
   $('addBtn').addEventListener('click', function () { $('newModal').hidden = false; });
