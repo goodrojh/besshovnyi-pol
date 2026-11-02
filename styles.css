@@ -920,3 +920,72 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
   .hero__form { padding: 18px 16px; }
   .hero__form-sub { margin-bottom: 14px; }
 }
+
+/* ============================================================
+   ВНУТРЕННИЕ СТРАНИЦЫ (объекты, системы, статьи)
+   ============================================================ */
+.page { padding-top: 0; }
+.crumbs { padding: calc(var(--nav-h) + 18px) 0 0; font-size: 13.5px; color: var(--ink-3); }
+.crumbs a { color: var(--ink-2); }
+.crumbs span { margin: 0 2px; }
+
+.page-hero { padding: 26px 0 10px; }
+.page-hero__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 46%); gap: clamp(22px, 3vw, 44px); align-items: center; }
+.page-hero h1 { font-size: clamp(30px, 4vw, 50px); line-height: 1.06; letter-spacing: -.03em; margin: 10px 0 14px; }
+.page-lead { font-size: clamp(16px, 1.35vw, 18.5px); color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
+.page-facts { display: flex; flex-wrap: wrap; gap: 22px; margin: 24px 0 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+.page-facts div { display: flex; flex-direction: column; }
+.page-facts b { font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+.page-facts small { font-size: 13px; color: var(--ink-3); }
+.page-hero__media { margin: 0; }
+.page-hero__media img { width: 100%; height: auto; border-radius: 18px; display: block; }
+.page-hero__media figcaption { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+
+.narrow { max-width: 880px; }
+.section--alt { background: var(--bg-2, #f4f7fa); }
+.narrow p { margin-bottom: 14px; line-height: 1.68; }
+.narrow h2.h-sec { margin-top: 38px; }
+.narrow h2.h-sec:first-child { margin-top: 0; }
+
+.list-num, .list-ok { margin: 0 0 18px; padding-left: 0; list-style: none; counter-reset: li; }
+.list-num li, .list-ok li { position: relative; padding-left: 34px; margin-bottom: 12px; line-height: 1.65; }
+.list-num li::before {
+  counter-increment: li; content: counter(li);
+  position: absolute; left: 0; top: 1px; width: 23px; height: 23px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.list-ok li::before {
+  content: ''; position: absolute; left: 4px; top: 9px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--accent);
+}
+
+.tbl { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
+.tbl th, .tbl td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14.5px; vertical-align: top; }
+.tbl th { background: var(--ink); color: #fff; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.tbl tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+.note { background: var(--accent-soft, #e9f0fc); border-radius: 12px; padding: 14px 16px; font-size: 14.5px; line-height: 1.6; }
+
+.pgal { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 22px; }
+.pgal__item { margin: 0; }
+.pgal__item img { width: 100%; height: auto; border-radius: 14px; display: block; }
+.pgal__item figcaption { font-size: 13px; color: var(--ink-3); margin-top: 8px; line-height: 1.45; }
+
+.page-form { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: clamp(18px, 2vw, 26px); margin-top: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.page-form .field { margin-bottom: 14px; }
+.page-form textarea { min-height: 62px; resize: vertical; }
+.link-more { font-weight: 600; color: var(--accent); }
+
+@media (max-width: 860px) {
+  .page-hero__inner { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* строка ссылок на подробные страницы под сеткой сегментов */
+.seg-links { margin-top: 18px; font-size: 14.5px; color: var(--ink-3); }
+.seg-links a { font-weight: 600; color: var(--accent); }
+.seg-links a:hover { color: var(--accent-2); }
+.seg-links__soon { display: block; margin-top: 4px; font-size: 13px; }

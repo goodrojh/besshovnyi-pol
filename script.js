@@ -275,7 +275,8 @@
     }).catch(function (e) { done(e); });
   }
 
-  var THANKS_URL = 'thanks/';
+  // от корня: со внутренних страниц относительный путь уводил бы в никуда
+  var THANKS_URL = '/thanks/';
   function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
   var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
   var TG_TOKEN = '8603826856:AAGFikvpRmOfoeWyIbzfqwtfoyjJIyJSQlE'; // бот @GKSphere_leads_bot
@@ -734,6 +735,54 @@
         }
         heroForm.hidden = true;
         hfOk.hidden = false;
+        goThanks();
+      });
+    });
+  }
+
+  /* ============================================================
+     ФОРМА НА ВНУТРЕННИХ СТРАНИЦАХ
+     ============================================================ */
+  var pageForm = document.getElementById('pageForm');
+  if (pageForm) {
+    var pfName = document.getElementById('pfName');
+    var pfPhone = document.getElementById('pfPhone');
+    var pfComment = document.getElementById('pfComment');
+    var pfSubmit = document.getElementById('pfSubmit');
+    var pfErr = document.getElementById('pfErr');
+    var pfOk = document.getElementById('pfOk');
+    attachPhoneMask(pfPhone);
+
+    pageForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var problem = checkContacts(pfName, pfPhone);
+      if (problem) {
+        pfErr.hidden = false;
+        pfErr.textContent = problem;
+        return;
+      }
+      pfErr.hidden = true;
+      pfSubmit.disabled = true;
+      pfSubmit.textContent = 'Отправляем…';
+
+      submitLead({
+        'Имя': pfName.value.trim(),
+        'Телефон': pfPhone.value.trim(),
+        'Комментарий': pfComment.value.trim() || '—',
+        // по какой странице пришла заявка — видно в CRM без лишних вопросов
+        'Интересует': document.title.split('—')[0].trim(),
+        'Акция': '—',
+        'Источник': 'Быстрая форма на сайте'
+      }, null, null, function (err) {
+        if (err) {
+          pfSubmit.disabled = false;
+          pfSubmit.textContent = 'Получить расчёт';
+          pfErr.hidden = false;
+          pfErr.innerHTML = LEAD_FAIL;
+          return;
+        }
+        pageForm.hidden = true;
+        pfOk.hidden = false;
         goThanks();
       });
     });
