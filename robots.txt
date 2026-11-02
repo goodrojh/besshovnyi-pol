@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /thanks
+Disallow: /crm/
+Disallow: /*?fix=
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&fix
+
+Sitemap: https://gksphere.ru/sitemap.xml
