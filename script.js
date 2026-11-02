@@ -741,6 +741,40 @@
   }
 
   /* ============================================================
+     МЕНЮ РАЗДЕЛОВ
+     ============================================================ */
+  var menuItems = document.querySelectorAll('.menu__item');
+  if (menuItems.length) {
+    [].forEach.call(menuItems, function (item) {
+      var btn = item.querySelector('.menu__btn');
+      if (!btn) return;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = item.classList.contains('menu__item--open');
+        [].forEach.call(menuItems, function (x) {
+          x.classList.remove('menu__item--open');
+          var b = x.querySelector('.menu__btn');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+        if (!open) {
+          item.classList.add('menu__item--open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+      // на компьютере открываем наведением: так привычнее
+      item.addEventListener('mouseenter', function () {
+        if (window.matchMedia('(min-width: 1101px)').matches) item.classList.add('menu__item--open');
+      });
+      item.addEventListener('mouseleave', function () {
+        if (window.matchMedia('(min-width: 1101px)').matches) item.classList.remove('menu__item--open');
+      });
+    });
+    document.addEventListener('click', function () {
+      [].forEach.call(menuItems, function (x) { x.classList.remove('menu__item--open'); });
+    });
+  }
+
+  /* ============================================================
      ФОРМА НА ВНУТРЕННИХ СТРАНИЦАХ
      ============================================================ */
   var pageForm = document.getElementById('pageForm');

@@ -989,3 +989,61 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 .seg-links a { font-weight: 600; color: var(--accent); }
 .seg-links a:hover { color: var(--accent-2); }
 .seg-links__soon { display: block; margin-top: 4px; font-size: 13px; }
+
+/* ============================================================
+   МЕНЮ РАЗДЕЛОВ (объекты, системы)
+   ============================================================ */
+.menu { display: flex; align-items: center; gap: 4px; margin-left: 18px; }
+.menu__item { position: relative; }
+.menu__btn, .menu__link {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; padding: 9px 11px; border-radius: 9px;
+  font: inherit; font-size: 14.5px; font-weight: 600; color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+}
+.menu__btn:hover, .menu__link:hover,
+.menu__item--open .menu__btn { background: var(--accent-soft); color: var(--accent-2); }
+.menu__btn svg { width: 15px; height: 15px; transition: transform .18s; }
+.menu__item--open .menu__btn svg { transform: rotate(180deg); }
+
+.menu__drop {
+  position: absolute; z-index: 30; top: calc(100% + 8px); left: 0;
+  min-width: 290px; list-style: none; margin: 0; padding: 8px;
+  background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15,24,32,.18);
+  opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .18s;
+}
+.menu__item--open .menu__drop { opacity: 1; visibility: visible; transform: none; }
+.menu__drop a {
+  display: block; padding: 9px 12px; border-radius: 9px;
+  font-size: 14.5px; color: var(--ink); line-height: 1.35;
+}
+.menu__drop a:hover { background: var(--bg); color: var(--accent-2); }
+.menu__drop a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-2); font-weight: 600; }
+
+.page-meta { margin-top: 18px; font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+
+@media (max-width: 1100px) {
+  .menu { display: none; }
+}
+
+/* строка быстрых ссылок по объектам: видна там, где выпадающее меню скрыто */
+.navlinks { display: none; }
+@media (max-width: 1100px) {
+  /* шапка стала в две строки: высоту задаём с запасом,
+     иначе строка ссылок обрезается, а контент уезжает под неё */
+  :root { --nav-h: 114px; }
+  .nav { height: auto; min-height: var(--nav-h); align-items: flex-start; padding: 10px 0 8px; }
+  .nav__inner { flex-wrap: wrap; gap: 10px 16px; }
+  .navlinks {
+    display: flex; order: 4; width: 100%; gap: 6px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+    margin-top: -2px;
+  }
+  .navlinks::-webkit-scrollbar { display: none; }
+  .navlinks a {
+    flex: none; font-size: 13.5px; font-weight: 600; white-space: nowrap;
+    padding: 7px 12px; border-radius: 999px; background: var(--bg); color: var(--ink-2);
+  }
+  .navlinks a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-2); }
+}

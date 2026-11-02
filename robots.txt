@@ -1,8 +1,35 @@
+# Поисковые роботы
 User-agent: *
 Allow: /
 Disallow: /thanks
 Disallow: /crm/
 Disallow: /*?fix=
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&fix
+
+# Роботы нейросетей: нужны, чтобы нас цитировали в ответах ассистентов
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: YandexBot
+Allow: /
 Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&fix
 
 Sitemap: https://gksphere.ru/sitemap.xml
