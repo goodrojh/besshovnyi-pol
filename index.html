@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hero-poster.jpg" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20260821161514">
+<link rel="stylesheet" href="styles.css?v=20261102140708">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -283,6 +283,39 @@
         <div><b>до 5 лет</b><small>гарантии в договоре</small></div>
       </div>
     </div>
+
+    <!-- открытая форма: половина людей не доходит до кнопок ниже -->
+    <aside class="hero__form reveal in">
+      <h2 class="hero__form-title">Рассчитать пол за 24 часа</h2>
+      <p class="hero__form-sub">Инженер перезвонит, уточнит задачу и пришлёт смету. Без навязчивых звонков.</p>
+
+      <form id="heroForm" novalidate>
+        <div class="field">
+          <label for="hfName">Как к вам обращаться</label>
+          <input type="text" id="hfName" name="name" placeholder="Имя" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="hfPhone">Телефон</label>
+          <input type="tel" id="hfPhone" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+        </div>
+        <div class="field">
+          <label for="hfComment">Коротко о задаче <span class="field__opt">— по желанию</span></label>
+          <textarea id="hfComment" name="comment" rows="2" placeholder="Склад 800 м², бетон в трещинах"></textarea>
+        </div>
+
+        <p class="form-err" id="hfErr" hidden></p>
+
+        <button type="submit" class="btn btn--primary btn--lg hero__form-btn" id="hfSubmit">
+          Получить расчёт
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <p class="consent">Нажимая кнопку, вы соглашаетесь с
+          <a href="privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+      </form>
+
+      <p class="form-ok" id="hfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
+    </aside>
   </div>
 
 </section>
@@ -1003,6 +1036,6 @@
   </figure>
 </div>
 
-<script src="script.js?v=20260821161514"></script>
+<script src="script.js?v=20261102140708"></script>
 </body>
 </html>

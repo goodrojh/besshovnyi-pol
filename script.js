@@ -534,6 +534,7 @@
   attachPhoneMask(document.getElementById('qPhone'));
   attachPhoneMask(document.getElementById('galPhone'));
   attachPhoneMask(document.getElementById('lmPhone'));
+  attachPhoneMask(document.getElementById('hfPhone'));
 
   /* ============================================================
      БЫСТРАЯ ФОРМА ЗАЯВКИ
@@ -688,6 +689,52 @@
         goThanks();
         // имя и телефон оставляем, комментарий чистим — он был про другой запрос
         lmComment.value = '';
+      });
+    });
+  }
+
+  /* ============================================================
+     ФОРМА НА ПЕРВОМ ЭКРАНЕ
+     ============================================================ */
+  var heroForm = document.getElementById('heroForm');
+  if (heroForm) {
+    var hfName = document.getElementById('hfName');
+    var hfPhone = document.getElementById('hfPhone');
+    var hfComment = document.getElementById('hfComment');
+    var hfSubmit = document.getElementById('hfSubmit');
+    var hfErr = document.getElementById('hfErr');
+    var hfOk = document.getElementById('hfOk');
+
+    heroForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var problem = checkContacts(hfName, hfPhone);
+      if (problem) {
+        hfErr.hidden = false;
+        hfErr.textContent = problem;
+        return;
+      }
+      hfErr.hidden = true;
+      hfSubmit.disabled = true;
+      hfSubmit.textContent = 'Отправляем…';
+
+      submitLead({
+        'Имя': hfName.value.trim(),
+        'Телефон': hfPhone.value.trim(),
+        'Комментарий': hfComment.value.trim() || '—',
+        'Интересует': 'Форма на первом экране',
+        'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
+        'Источник': 'Быстрая форма на сайте'
+      }, null, null, function (err) {
+        if (err) {
+          hfSubmit.disabled = false;
+          hfSubmit.textContent = 'Получить расчёт';
+          hfErr.hidden = false;
+          hfErr.innerHTML = LEAD_FAIL;
+          return;
+        }
+        heroForm.hidden = true;
+        hfOk.hidden = false;
+        goThanks();
       });
     });
   }
