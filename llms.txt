@@ -121,6 +121,8 @@
 - [Полы для гаража](https://gksphere.ru/poly-dlya-garazha/) — выбор системы, требования к бетону
 - [Полимерные полы в квартире](https://gksphere.ru/poly-v-kvartire/) — плюсы, минусы, тёплый пол
 
+- [Контакты](https://gksphere.ru/kontakty/) — телефон, почта, регион работ, реквизиты
+
 Служебные:
 - [Машинно-читаемый прайс](https://gksphere.ru/pricing.md)
 - [Политика обработки персональных данных](https://gksphere.ru/privacy.html)
