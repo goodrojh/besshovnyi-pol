@@ -447,7 +447,6 @@
   var leadForm = document.getElementById('leadForm');
   var leadTitle = document.getElementById('leadTitle');
   var leadDesc = document.getElementById('leadDesc');
-  var leadEyebrow = document.getElementById('leadEyebrow');
   var lmName = document.getElementById('lmName');
   var lmPhone = document.getElementById('lmPhone');
   var lmComment = document.getElementById('lmComment');
@@ -470,11 +469,10 @@
     if (lmSubmit) { lmSubmit.disabled = false; lmSubmit.textContent = 'Отправить заявку'; }
   }
 
-  function openLead(ctx, title, desc, eyebrow) {
+  function openLead(ctx, title, desc) {
     if (!leadEl) return;
     leadCtx = ctx || 'Быстрая форма на сайте';
     leadReturnFocus = document.activeElement;
-    if (leadEyebrow) leadEyebrow.textContent = eyebrow || 'Заявка';
     if (leadTitle) leadTitle.textContent = title || 'Подобрать систему под ваш объект';
     if (leadDesc) leadDesc.textContent = desc || LEAD_DEFAULT_DESC;
     resetLeadForm();
@@ -496,8 +494,7 @@
       openLead(
         btn.getAttribute('data-lead'),
         btn.getAttribute('data-lead-title') || 'Подобрать систему под ваш объект',
-        btn.getAttribute('data-lead-desc') || ('Вы выбрали: ' + btn.getAttribute('data-lead') + '. ' + LEAD_DEFAULT_DESC),
-        btn.getAttribute('data-lead-eyebrow') || 'Заявка'
+        btn.getAttribute('data-lead-desc') || ('Вы выбрали: ' + btn.getAttribute('data-lead') + '. ' + LEAD_DEFAULT_DESC)
       );
     });
   });
@@ -518,8 +515,7 @@
     if (memo) {
       openLead('Исправленная заявка',
         'Проверьте данные и отправьте заново',
-        'Мы подставили то, что вы отправили в прошлый раз. Поправьте, что нужно — например номер телефона — и отправьте ещё раз.',
-        'Исправление');
+        'Мы подставили то, что вы отправили в прошлый раз. Поправьте, что нужно — например номер телефона — и отправьте ещё раз.');
       if (lmName) lmName.value = memo['Имя'] || '';
       if (lmPhone) lmPhone.value = memo['Телефон'] || '';
       if (lmComment) lmComment.value = (memo['Комментарий'] && memo['Комментарий'] !== '—') ? memo['Комментарий'] : '';
