@@ -1,0 +1,66 @@
+# ГК «Сфера» — настройки Apache для gksphere.ru
+# Если после загрузки сайт отдаёт ошибку 500 — просто удалите этот файл,
+# сайт продолжит работать, потеряются только сжатие и кэш.
+
+# ---- Одно главное зеркало -------------------------------------------------
+# Сайт должен открываться только по https://gksphere.ru
+# Переадресацию с http на https включите галочкой в панели хостинга:
+# Сайты → gksphere.ru → Изменить → «Перенаправлять HTTP-запросы в HTTPS».
+# Здесь — только www → без www (эта правка не может зациклиться).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^(.*)$ https://gksphere.ru/$1 [R=301,L]
+</IfModule>
+
+# ---- Сжатие ---------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml text/markdown
+  AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ---- Кэширование ----------------------------------------------------------
+# Стили и скрипт подключены с ?v=... — при обновлении версия меняется,
+# поэтому длинный кэш безопасен. HTML не кэшируем: правки видны сразу.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg               "access plus 1 year"
+  ExpiresByType image/png                "access plus 1 year"
+  ExpiresByType image/webp               "access plus 1 year"
+  ExpiresByType image/svg+xml            "access plus 1 year"
+  ExpiresByType video/mp4                "access plus 1 year"
+  ExpiresByType text/css                 "access plus 1 year"
+  ExpiresByType application/javascript   "access plus 1 year"
+  ExpiresByType text/html                "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|xml|txt)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(css|js|jpg|jpeg|png|webp|svg|mp4)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# ---- Типы файлов ----------------------------------------------------------
+AddType text/markdown .md
+AddDefaultCharset UTF-8
+
+# ---- Что не отдаём --------------------------------------------------------
+# Архивы и исходники Apps Script не должны открываться по прямой ссылке.
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(zip|rar|7z|tar|gz|bak|log|gs)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "\.(zip|rar|7z|tar|gz|bak|log|gs)$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+DirectoryIndex index.html
+Options -Indexes
