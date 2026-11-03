@@ -940,6 +940,22 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
   .page-banner img { aspect-ratio: 3 / 2; }
 }
 
+/* Ссылки внутри текста должны быть видны: до этого они были того же цвета,
+   что и абзац, без подчёркивания — читатель их просто не замечал. */
+.narrow p a, .narrow li a, .narrow td a, .note a {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: rgba(21, 69, 160, .35);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color .15s, text-decoration-color .15s;
+}
+.narrow p a:hover, .narrow li a:hover, .narrow td a:hover, .note a:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+.narrow .tbl a { font-weight: 600; }
+
 .narrow { max-width: 880px; }
 /* Длина строки: 66–72 знака читаются ровно, 85 — уже утомляют.
    Ограничиваем только текст; таблицы и галереи занимают всю ширину. */
