@@ -494,8 +494,10 @@
         </div>
         <p class="form-err" id="pfErr" hidden></p>
         <button type="submit" class="btn btn--primary btn--lg" id="pfSubmit">Получить расчёт</button>
-        <p class="consent">Нажимая кнопку, вы соглашаетесь с
-          <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+        <label class="consent">
+          <input type="checkbox" id="pfAgree">
+          <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+        </label>
       </form>
       <p class="form-ok" id="pfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
     </div>
