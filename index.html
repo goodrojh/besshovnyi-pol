@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hero-poster.jpg" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20261102145011">
+<link rel="stylesheet" href="styles.css?v=20261103b">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -223,16 +223,9 @@
 <!-- ============ NAV ============ -->
 <header class="nav" id="nav">
   <div class="container nav__inner">
-    <a href="#top" class="brand" aria-label="ГК Сфера — устройство полов">
-      <img src="assets/logo.png" alt="ГК Сфера — устройство полов" width="900" height="275">
+    <a href="/" class="brand" aria-label="ГК Сфера — устройство полов">
+      <img src="/assets/logo.png" alt="ГК Сфера — устройство промышленных полов" width="900" height="275">
     </a>
-    <nav class="nav__links">
-      <a href="#segments">Объекты</a>
-      <a href="#systems">Системы</a>
-      <a href="#process">Как работаем</a>
-      <a href="#guarantee">Гарантия</a>
-      <a href="#faq">Вопросы</a>
-    </nav>
 
     <nav class="menu" aria-label="Разделы сайта">
       <div class="menu__item">
@@ -240,12 +233,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <ul class="menu__drop">
-          <li><a href="poly-dlya-sklada/">Полы для склада</a></li>
-          <li><a href="poly-dlya-pishchevogo-proizvodstva/">Полы для пищевого производства</a></li>
-          <li><a href="poly-dlya-farmproizvodstva/">Полы для фармпроизводства</a></li>
-          <li><a href="poly-dlya-ceha/">Полы для производственного цеха</a></li>
-          <li><a href="poly-dlya-parkinga/">Полы для паркинга</a></li>
-          <li><a href="poly-dlya-kommercii/">Полы для коммерческих помещений</a></li>
+          <li><a href="/poly-dlya-sklada/">Полы для склада</a></li>
+          <li><a href="/poly-dlya-pishchevogo-proizvodstva/">Полы для пищевого производства</a></li>
+          <li><a href="/poly-dlya-farmproizvodstva/">Полы для фармпроизводства</a></li>
+          <li><a href="/poly-dlya-ceha/">Полы для производственного цеха</a></li>
+          <li><a href="/poly-dlya-parkinga/">Полы для паркинга</a></li>
+          <li><a href="/poly-dlya-kommercii/">Полы для коммерческих помещений</a></li>
         </ul>
       </div>
       <div class="menu__item">
@@ -253,45 +246,36 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <ul class="menu__drop">
-          <li><a href="/#systems">Полиуретан-цемент</a></li>
-          <li><a href="/#systems">Эпоксидные наливные</a></li>
-          <li><a href="/#systems">Полиуретановые</a></li>
-          <li><a href="/#systems">Метилметакрилат (ММА)</a></li>
-          <li><a href="/#systems">Кварцнаполненные</a></li>
-          <li><a href="/#systems">Полимочевина</a></li>
+          <li><a href="/epoksidnye-nalivnye-poly/">Эпоксидные наливные полы</a></li>
+          <li><a href="/poliuretan-cementnye-poly/">Полиуретан-цементные полы</a></li>
+          <li><a href="/poliuretanovye-poly/">Полиуретановые полы</a></li>
+          <li><a href="/kvarcnapolnennye-poly/">Кварцнаполненные полы</a></li>
+          <li><a href="/mma-poly/">Полы из метилметакрилата (ММА)</a></li>
+          <li><a href="/polimochevina/">Полимочевина</a></li>
         </ul>
       </div>
+      <a class="menu__link" href="/ceny/">Цены</a>
+      <a class="menu__link" href="/chto-takoe-polimernye-poly/">Как это работает</a>
     </nav>
+
     <div class="navlinks" aria-label="Объекты">
-      <a href="poly-dlya-sklada/">Склады</a>
-      <a href="poly-dlya-pishchevogo-proizvodstva/">Пищевые</a>
-      <a href="poly-dlya-farmproizvodstva/">Фарма</a>
-      <a href="poly-dlya-ceha/">Цеха</a>
-      <a href="poly-dlya-parkinga/">Паркинги</a>
-      <a href="poly-dlya-kommercii/">Коммерция</a>
+      <a href="/poly-dlya-sklada/">Склады</a>
+      <a href="/poly-dlya-pishchevogo-proizvodstva/">Пищевые</a>
+      <a href="/poly-dlya-farmproizvodstva/">Фарма</a>
+      <a href="/poly-dlya-ceha/">Цеха</a>
+      <a href="/poly-dlya-parkinga/">Паркинги</a>
+      <a href="/poly-dlya-kommercii/">Коммерция</a>
+      <a href="/ceny/">Цены</a>
     </div>
 
     <div class="nav__right">
       <a href="tel:+79191225271" class="nav__phone" aria-label="Позвонить Наталье, менеджеру: +7 919 122-52-71">
         <small>Наталья, менеджер</small>+7 919 122-52-71
       </a>
-      <a href="#quiz" class="btn btn--primary">Подобрать пол</a>
-      <button class="nav__burger" id="burger" aria-label="Меню"><span></span></button>
+      <a href="#zayavka" class="btn btn--primary">Получить расчёт</a>
     </div>
   </div>
 </header>
-
-<!-- mobile menu -->
-<div class="mobile-menu" id="mobileMenu">
-  <button class="mobile-menu__close" id="menuClose" aria-label="Закрыть">×</button>
-  <a href="#segments">Объекты</a>
-  <a href="#systems">Системы</a>
-  <a href="#process">Как работаем</a>
-  <a href="#guarantee">Гарантия</a>
-  <a href="#faq">Вопросы</a>
-  <a href="tel:+79191225271" class="nav__phone nav__phone--mob">+7 919 122-52-71 <small>Наталья, менеджер</small></a>
-  <a href="#quiz" class="btn btn--primary btn--lg">Подобрать пол</a>
-</div>
 
 <!-- ============ HERO ============ -->
 <section class="hero" id="top">
@@ -434,6 +418,13 @@
         <span class="seg__go">Смотреть объекты <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
+
+      <p class="seg-links">Подробно по объектам: <a href="/poly-dlya-sklada/">полы для склада</a> ·
+        <a href="/poly-dlya-pishchevogo-proizvodstva/">пищевого производства</a> ·
+        <a href="/poly-dlya-farmproizvodstva/">фармпроизводства</a> ·
+        <a href="/poly-dlya-ceha/">производственного цеха</a> ·
+        <a href="/poly-dlya-parkinga/">паркинга</a> ·
+        <a href="/poly-dlya-kommercii/">коммерческих помещений</a></p>
   </div>
 </section>
 
@@ -547,6 +538,14 @@
         <span class="sys__go">Подобрать под мой объект <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
+
+      <p class="seg-links">Подробно по системам: <a href="/poliuretan-cementnye-poly/">полиуретан-цементные</a> ·
+        <a href="/epoksidnye-nalivnye-poly/">эпоксидные наливные</a> ·
+        <a href="/poliuretanovye-poly/">полиуретановые</a> ·
+        <a href="/mma-poly/">ММА</a> ·
+        <a href="/kvarcnapolnennye-poly/">кварцнаполненные</a> ·
+        <a href="/polimochevina/">полимочевина</a> ·
+        <a href="/ceny/"><b>цены на все системы</b></a></p>
   </div>
 </section>
 
@@ -840,6 +839,13 @@
         <div class="faq__a"><p>Работаем от 200 м². Для коммерческих объектов есть декоративные варианты, фиксированная смета за 1 день и монтаж за 3–5 дней.</p></div>
       </div>
     </div>
+      <p class="seg-links">Разбираем подробно: <a href="/chto-takoe-polimernye-poly/">что такое полимерные полы</a> ·
+        <a href="/epoksid-ili-poliuretan/">эпоксид или полиуретан</a> ·
+        <a href="/pochemu-otslaivaetsya-polimernyy-pol/">почему отслаивается пол</a> ·
+        <a href="/skolko-sluzhit-polimernyy-pol/">сколько служит</a> ·
+        <a href="/vreden-li-polimernyy-pol/">вреден ли для здоровья</a> ·
+        <a href="/poly-dlya-garazha/">полы для гаража</a> ·
+        <a href="/poly-v-kvartire/">полы в квартире</a></p>
   </div>
 </section>
 
@@ -884,21 +890,36 @@
       <div>
         <h5>Объекты</h5>
         <ul>
-          <li><a href="#segments">Пищевые производства</a></li>
-          <li><a href="#segments">Склады и логистика</a></li>
-          <li><a href="#segments">Производственные цеха</a></li>
-          <li><a href="#segments">Фарма и чистые помещения</a></li>
-          <li><a href="#segments">Паркинги</a></li>
+          <li><a href="/poly-dlya-sklada/">Полы для склада</a></li>
+          <li><a href="/poly-dlya-pishchevogo-proizvodstva/">Пищевое производство</a></li>
+          <li><a href="/poly-dlya-ceha/">Производственный цех</a></li>
+          <li><a href="/poly-dlya-farmproizvodstva/">Фарма и чистые помещения</a></li>
+          <li><a href="/poly-dlya-parkinga/">Паркинги</a></li>
+          <li><a href="/poly-dlya-kommercii/">Коммерческие помещения</a></li>
         </ul>
       </div>
       <div>
-        <h5>Компания</h5>
+        <h5>Системы</h5>
         <ul>
-          <li><a href="#systems">Системы покрытий</a></li>
-          <li><a href="#process">Как мы работаем</a></li>
-          <li><a href="#cases">Объекты</a></li>
-          <li><a href="#guarantee">Гарантия</a></li>
-          <li><a href="#faq">Вопросы и ответы</a></li>
+          <li><a href="/poliuretan-cementnye-poly/">Полиуретан-цементные</a></li>
+          <li><a href="/epoksidnye-nalivnye-poly/">Эпоксидные наливные</a></li>
+          <li><a href="/poliuretanovye-poly/">Полиуретановые</a></li>
+          <li><a href="/kvarcnapolnennye-poly/">Кварцнаполненные</a></li>
+          <li><a href="/mma-poly/">Метилметакрилат (ММА)</a></li>
+          <li><a href="/polimochevina/">Полимочевина</a></li>
+          <li><a href="/ceny/">Цены на полимерные полы</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Полезное</h5>
+        <ul>
+          <li><a href="/chto-takoe-polimernye-poly/">Что такое полимерные полы</a></li>
+          <li><a href="/epoksid-ili-poliuretan/">Эпоксид или полиуретан</a></li>
+          <li><a href="/pochemu-otslaivaetsya-polimernyy-pol/">Почему отслаивается пол</a></li>
+          <li><a href="/skolko-sluzhit-polimernyy-pol/">Сколько служит пол</a></li>
+          <li><a href="/vreden-li-polimernyy-pol/">Вреден ли полимерный пол</a></li>
+          <li><a href="/poly-dlya-garazha/">Полы для гаража</a></li>
+          <li><a href="/poly-v-kvartire/">Полы в квартире</a></li>
         </ul>
       </div>
       <div class="footer__contacts">
@@ -1073,8 +1094,6 @@
     <figcaption class="lb__bar"><span class="lb__count" id="lbCount"></span><span id="lbCap"></span></figcaption>
   </figure>
 </div>
-      <p class="seg-links">Подробно по объектам: <a href="poly-dlya-sklada/">склада</a> · <a href="poly-dlya-pishchevogo-proizvodstva/">пищевого производства</a> · <a href="poly-dlya-farmproizvodstva/">фармпроизводства</a> · <a href="poly-dlya-ceha/">производственного цеха</a> · <a href="poly-dlya-parkinga/">паркинга</a> · <a href="poly-dlya-kommercii/">коммерческих помещений</a></p>
-
-<script src="script.js?v=20261102145011"></script>
+<script src="script.js?v=20261103b"></script>
 </body>
 </html>

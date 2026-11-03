@@ -529,7 +529,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ---------- Footer ---------- */
 .footer { background: #0b1218; color: #9fb1c0; padding-block: 64px 36px; }
-.footer__top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 36px; padding-bottom: 44px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.footer__top { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr 1.1fr; gap: 36px; padding-bottom: 44px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .footer__brand .brand { color: #fff; margin-bottom: 16px; }
 .footer__brand p { font-size: 14.5px; max-width: 34ch; }
 .footer h5 { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 16px; letter-spacing: .02em; }
@@ -931,6 +931,7 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 
 .page-hero { padding: 26px 0 10px; }
 .page-hero__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 46%); gap: clamp(22px, 3vw, 44px); align-items: center; }
+.page-hero__inner--solo { grid-template-columns: minmax(0, 860px); justify-content: start; }
 .page-hero h1 { font-size: clamp(30px, 4vw, 50px); line-height: 1.06; letter-spacing: -.03em; margin: 10px 0 14px; }
 .page-lead { font-size: clamp(16px, 1.35vw, 18.5px); color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
 .page-facts { display: flex; flex-wrap: wrap; gap: 22px; margin: 24px 0 26px; padding-top: 20px; border-top: 1px solid var(--line); }
