@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hero-poster.jpg" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20261103d">
+<link rel="stylesheet" href="styles.css?v=20261104a">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -334,8 +334,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
 
-        <p class="consent">Нажимая кнопку, вы соглашаетесь с
-          <a href="privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+        <label class="consent">
+          <input type="checkbox" id="hfAgree">
+          <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+        </label>
       </form>
 
       <p class="form-ok" id="hfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
@@ -777,19 +779,14 @@
               <textarea id="qComment" rows="3" placeholder="Сроки, особенности объекта, вопросы по смете — что важно учесть"></textarea>
               <span class="field__hint">Необязательно, но помогает точнее посчитать смету.</span>
             </div>
-            <div class="field">
-              <label for="qFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
-              <label class="filedrop" for="qFiles">
-                <input type="file" id="qFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
-                <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
-              </label>
-              <ul class="filelist" id="qFileList"></ul>
-              <p class="filelist__err" id="qFileErr" hidden></p>
-              <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
-            </div>
-            <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+            <p class="field__hint field__hint--files">Чертежи, фото основания и техническое задание
+              пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a> или в
+              <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> —
+              мы свяжем их с вашей заявкой по номеру телефона.</p>
+            <label class="consent">
+              <input type="checkbox" id="qAgree">
+              <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+            </label>
             <p class="form-err" id="qErr" hidden></p>
           </div>
 
@@ -944,7 +941,7 @@
     <div class="footer__bottom">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
       <span class="footer__made">Сайт разработан и продвигается компанией <a href="https://odinpotok.ru" target="_blank" rel="noopener">Один поток</a></span>
-      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · <a href="privacy.html">Политика обработки персональных данных</a></span>
+      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · <a href="/privacy.html">Политика обработки персональных данных</a> · <a href="/soglasie/">Согласие на обработку данных</a></span>
     </div>
   </div>
 </footer>
@@ -990,20 +987,15 @@
         <label for="lmComment">Комментарий <span class="field__opt">по желанию</span></label>
         <textarea id="lmComment" rows="3" placeholder="Тип объекта, площадь, сроки, что сейчас с полом"></textarea>
       </div>
-      <div class="field">
-        <label for="lmFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
-        <label class="filedrop" for="lmFiles">
-          <input type="file" id="lmFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
-          <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
-        </label>
-        <ul class="filelist" id="lmFileList"></ul>
-        <p class="filelist__err" id="lmFileErr" hidden></p>
-        <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
-      </div>
+      <p class="field__hint field__hint--files">Чертежи, фото основания и техническое задание
+        пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a> или в
+        <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> —
+        мы свяжем их с вашей заявкой по номеру телефона.</p>
       <button type="submit" class="btn btn--primary btn--lg btn--block" id="lmSubmit">Отправить заявку</button>
-      <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+      <label class="consent">
+        <input type="checkbox" id="lmAgree">
+        <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+      </label>
       <p class="form-err" id="lmErr" hidden></p>
       <div class="gal__ok" id="lmOk" hidden>
         <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -1055,20 +1047,15 @@
             <label for="galComment">Комментарий к заявке</label>
             <textarea id="galComment" rows="3" placeholder="Тип объекта, площадь, сроки, вопросы"></textarea>
           </div>
-          <div class="field">
-            <label for="galFiles">Фото, видео или ТЗ <span class="field__opt">по желанию</span></label>
-            <label class="filedrop" for="galFiles">
-              <input type="file" id="galFiles" accept="image/*,video/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.ods,.csv,.dwg,.dxf,.zip,.rar,.7z" multiple>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-              <span class="filedrop__text">Прикрепить фото, видео или ТЗ</span>
-              <span class="filedrop__hint">Фото основания, чертёж или ТЗ. До 5 файлов, каждый до 45 МБ.</span>
-            </label>
-            <ul class="filelist" id="galFileList"></ul>
-            <p class="filelist__err" id="galFileErr" hidden></p>
-            <span class="field__hint">Если ТЗ большое или файлов много — пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>, мы свяжем с заявкой.</span>
-          </div>
+          <p class="field__hint field__hint--files">Чертежи, фото основания и техническое задание
+            пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a> или в
+            <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> —
+            мы свяжем их с вашей заявкой по номеру телефона.</p>
           <button type="submit" class="btn btn--primary btn--lg btn--block" id="galSubmit">Оставить заявку</button>
-          <p class="consent">Нажимая кнопку, вы соглашаетесь с <a href="privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+          <label class="consent">
+            <input type="checkbox" id="galAgree">
+            <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+          </label>
           <p class="form-err" id="galErr" hidden></p>
           <div class="gal__ok" id="galOk" hidden>
             <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -1097,6 +1084,6 @@
     <figcaption class="lb__bar"><span class="lb__count" id="lbCount"></span><span id="lbCap"></span></figcaption>
   </figure>
 </div>
-<script src="script.js?v=20261103d"></script>
+<script src="script.js?v=20261104a"></script>
 </body>
 </html>

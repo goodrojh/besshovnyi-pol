@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="/assets/gal/comm-01.jpg" fetchpriority="high">
-<link rel="stylesheet" href="/styles.css?v=20261103d">
+<link rel="stylesheet" href="/styles.css?v=20261104a">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -313,8 +313,10 @@
         </div>
         <p class="form-err" id="pfErr" hidden></p>
         <button type="submit" class="btn btn--primary btn--lg" id="pfSubmit">Получить расчёт</button>
-        <p class="consent">Нажимая кнопку, вы соглашаетесь с
-          <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a>.</p>
+        <label class="consent">
+          <input type="checkbox" id="pfAgree">
+          <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+        </label>
       </form>
       <p class="form-ok" id="pfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
     </div>
@@ -387,11 +389,11 @@
     <div class="footer__bottom">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
       <span class="footer__made">Сайт разработан и продвигается компанией <a href="https://odinpotok.ru" target="_blank" rel="noopener">Один поток</a></span>
-      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · <a href="/privacy.html">Политика обработки персональных данных</a></span>
+      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · <a href="/privacy.html">Политика обработки персональных данных</a> · <a href="/soglasie/">Согласие на обработку данных</a></span>
     </div>
   </div>
 </footer>
 
-<script src="/script.js?v=20261103d"></script>
+<script src="/script.js?v=20261104a"></script>
 </body>
 </html>

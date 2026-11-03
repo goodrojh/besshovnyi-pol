@@ -497,8 +497,29 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz__done .check svg { width: 34px; height: 34px; }
 .quiz__done h4 { font-size: 24px; }
 .quiz__done p { color: var(--ink-2); margin-top: 10px; }
-.consent { font-size: 12.5px; color: var(--ink-3); margin-top: 14px; }
+.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; color: var(--ink-3); margin-top: 14px; cursor: pointer; }
+.consent input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent-2); cursor: pointer; }
 .consent a { color: var(--accent-2); text-decoration: underline; }
+/* подсветка, когда заявку отправляют без отметки */
+.consent--bad { color: #f04438; }
+.consent--bad input[type="checkbox"] { outline: 2px solid #f04438; outline-offset: 2px; border-radius: 3px; }
+.field__hint--files { display: block; margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+.field__hint--files a { color: var(--accent-2); text-decoration: underline; }
+
+/* ---------- Уведомление о cookie ---------- */
+.cookiebar { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 120;
+  display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; justify-content: space-between;
+  max-width: 880px; margin: 0 auto; padding: 16px 20px; border-radius: 16px;
+  background: #0b1218; color: #cdd9e3; box-shadow: 0 18px 50px rgba(8,16,24,.32); }
+.cookiebar p { margin: 0; flex: 1 1 360px; font-size: 13.5px; line-height: 1.55; }
+.cookiebar a { color: #fff; text-decoration: underline; }
+.cookiebar .btn { flex: none; height: 42px; padding: 0 22px; font-size: 14px; }
+@media (max-width: 560px) {
+  .cookiebar { left: 10px; right: 10px; bottom: 10px; padding: 14px 16px; }
+  .cookiebar .btn { width: 100%; }
+}
+/* плашка перекрывает плавающие кнопки мессенджеров — прячем их до её закрытия */
+.has-cookiebar .fab { display: none; }
 
 /* ---------- FAQ ---------- */
 .faq { max-width: 880px; margin-inline: auto; border-top: 1px solid var(--line); }

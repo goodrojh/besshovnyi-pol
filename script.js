@@ -278,171 +278,71 @@
   // от корня: со внутренних страниц относительный путь уводил бы в никуда
   var THANKS_URL = '/thanks/';
   function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
-  var LEAD_URL = 'https://formsubmit.co/ajax/gksphere@inbox.ru';
-  var TG_TOKEN = '8603826856:AAGFikvpRmOfoeWyIbzfqwtfoyjJIyJSQlE'; // бот @GKSphere_leads_bot
-  var TG_CHAT_ID = '-1004309963490';  // группа «ГК Сфера»
-  var TG_THREAD_ID = 2;               // тема «Заявки с сайта» (у группы включены темы)
+  // от корня: со внутренних страниц относительный путь уводил бы в никуда
+  var THANKS_URL = '/thanks/';
+  function goThanks() { try { location.assign(THANKS_URL); } catch (e) {} }
   var LEAD_FAIL = 'Не удалось отправить заявку. Позвоните нам — <a href="tel:+79191225271">+7 919 122-52-71</a>, ' +
     'напишите в <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> ' +
     'или на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>.';
 
-  function sendLead(fields, done) {
-    if (!window.fetch) { done(new Error('fetch unsupported')); return; }
-    var body = { _subject: 'Заявка с сайта ГК Сфера', _template: 'table', _captcha: 'false' };
-    Object.keys(fields).forEach(function (k) { body[k] = fields[k]; });
-    // Отправляем как обычную форму, а не JSON: такому запросу не нужен
-    // CORS-предзапрос, поэтому он уходит на один сетевой заход быстрее
-    // и не обрывается, когда страница уже сменилась на «спасибо».
-    var parts = [];
-    Object.keys(body).forEach(function (k) {
-      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(body[k]));
-    });
-    fetch(LEAD_URL, {
-      method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Accept': 'application/json' },
-      body: parts.join('&')
-    }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (data) {
-      // FormSubmit отвечает 200 даже когда письмо НЕ отправлено
-      // (например, форма ещё не активирована), поэтому проверяем поле success
-      if (!data || String(data.success) !== 'true') {
-        throw new Error(data && data.message ? data.message : 'lead not delivered');
-      }
-      done(null);
-    }).catch(function (e) { done(e); });
-  }
+  /* ---------- Отправка заявки ----------
+     Единственный канал — CRM на стороне сервера: она записывает заявку,
+     шлёт уведомление в Telegram и письмо. Раньше браузер посетителя
+     обращался к Telegram и к почтовому шлюзу напрямую, и ключ доступа
+     к боту лежал в открытом script.js — это убрано: ключи остаются
+     только в свойствах скрипта CRM.
 
-  function tgEscape(v) {
-    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function sendTelegram(fields, done) {
-    if (!TG_TOKEN || !TG_CHAT_ID) { done(new Error('telegram not configured')); return; }
-    if (!window.fetch) { done(new Error('fetch unsupported')); return; }
-    var lines = ['<b>Новая заявка с сайта ГК Сфера</b>', ''];
-    Object.keys(fields).forEach(function (k) {
-      var v = fields[k];
-      if (v === '' || v === '—' || v === null || typeof v === 'undefined') return;
-      lines.push('<b>' + tgEscape(k) + ':</b> ' + tgEscape(v));
-    });
-    var payload = {
-      chat_id: TG_CHAT_ID,
-      text: lines.join('\n'),
-      parse_mode: 'HTML',
-      disable_web_page_preview: true
-    };
-    if (TG_THREAD_ID) payload.message_thread_id = TG_THREAD_ID;
-    fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
-      method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) throw new Error(d && d.description ? d.description : 'telegram failed');
-      done(null);
-    }).catch(function (e) { done(e); });
-  }
-
-  /* ---------- Вложения: грузим в Telegram, в письмо кладём ссылки ---------- */
-  var MAX_FILES = 5;
-  var MAX_FILE_MB = 45;
-
-  function tgUpload(file, caption, done) {
-    // фото до 9 МБ шлём как photo (показывается в чате), остальное — как файл без сжатия
-    var asPhoto = /^image\//.test(file.type) && file.size <= 9 * 1024 * 1024;
-    var fd = new FormData();
-    fd.append('chat_id', TG_CHAT_ID);
-    if (TG_THREAD_ID) fd.append('message_thread_id', String(TG_THREAD_ID));
-    if (caption) fd.append('caption', caption);
-    fd.append(asPhoto ? 'photo' : 'document', file, file.name);
-    fetch('https://api.telegram.org/bot' + TG_TOKEN + '/' + (asPhoto ? 'sendPhoto' : 'sendDocument'), {
-      method: 'POST', body: fd
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) throw new Error(d && d.description ? d.description : 'upload failed');
-      var res = d.result || {};
-      var fileId = res.document ? res.document.file_id
-        : (res.photo && res.photo.length ? res.photo[res.photo.length - 1].file_id
-          : (res.video ? res.video.file_id : null));
-      if (!fileId) { done(null, null); return null; }
-      return fetch('https://api.telegram.org/bot' + TG_TOKEN + '/getFile?file_id=' + encodeURIComponent(fileId))
-        .then(function (r) { return r.json(); })
-        .then(function (f) {
-          var path = f && f.ok && f.result ? f.result.file_path : null;
-          done(null, path ? 'https://api.telegram.org/file/bot' + TG_TOKEN + '/' + path : null);
-        });
-    }).catch(function (e) { done(e, null); });
-  }
-
-  function tgUploadAll(files, caption, onProgress, done) {
-    if (!files.length || !TG_TOKEN || !TG_CHAT_ID) { done([]); return; }
-    var links = [], i = 0;
-    (function next() {
-      if (i >= files.length) { done(links); return; }
-      if (onProgress) onProgress(i + 1, files.length);
-      tgUpload(files[i], caption, function (err, link) {
-        if (link) links.push(link);
-        i++; next();
-      });
-    })();
-  }
-
-  // Шлём заявку во все каналы разом; принято — если сработал хотя бы один
-  // Telegram шлём первым и с одним повтором: запрос идёт из браузера
-  // посетителя, и на части сетей api.telegram.org недоступен. Итог
-  // доставки подставляем в письмо, чтобы было видно недошедшие заявки.
-  function sendTelegramRetry(fields, done) {
-    sendTelegram(fields, function (err) {
-      if (!err) { done(null); return; }
-      setTimeout(function () { sendTelegram(fields, done); }, 600);
-    });
-  }
-
+     CRM отвечает через 3–4 секунды, держать человека на форме всё это
+     время незачем: запрос доезжает до сервера, даже если браузер уже ушёл
+     на «спасибо». Поэтому ответа ждём не дольше 1,2 секунды. */
   function submitLead(fields, files, onProgress, done) {
-    files = files || [];
-    var caption = 'Заявка с сайта: ' + (fields['Имя'] || '') + ', ' + (fields['Телефон'] || '');
-    tgUploadAll(files, caption, onProgress, function (links) {
-      var mail = {}, tg = {};
-      Object.keys(fields).forEach(function (k) { mail[k] = fields[k]; tg[k] = fields[k]; });
-      if (files.length) {
-        mail['Файлы от клиента'] = links.length ? links.join('\n')
-          : (TG_TOKEN && TG_CHAT_ID ? files.length + ' шт. — смотрите в группе Telegram'
-            : files.length + ' шт. — передать не удалось, запросите у клиента');
-        tg['Файлы от клиента'] = files.length + ' шт. — прикреплены сообщениями выше';
-      }
-      // Если CRM подключена — она сама разложит заявку по каналам.
-      // Не ответила — уходим на прежний путь, чтобы заявка не пропала.
-      // CRM отвечает через 3–4 секунды: она успевает записать заявку, отправить
-      // уведомление в Telegram и письмо. Держать человека всё это время на форме
-      // незачем — проверено, что запрос доезжает до сервера, даже если браузер
-      // уже ушёл на «спасибо». Поэтому ждём ответа не дольше секунды.
-      var settled = false, grace = null;
-      function crmOk() {
-        if (settled) return;
-        settled = true;
-        clearTimeout(grace);
-        rememberLead(fields, files.length);
-        done(null);
-      }
-      sendToCrm(mail, function (crmErr) {
-        if (!crmErr) { crmOk(); return; }
-        if (settled) return;      // уже ушли на «спасибо»
-        settled = true;
-        clearTimeout(grace);
-        // CRM недоступна — возвращаемся к прежнему пути, чтобы заявка не пропала
-        sendTelegramRetry(tg, function (tgErr) {
-          if (TG_TOKEN && TG_CHAT_ID) {
-            mail['Дублировано в Telegram'] = tgErr ? 'НЕТ — не дошло с устройства клиента' : 'да';
-          }
-          sendLead(mail, function (mailErr) {
-            if (!tgErr || !mailErr) { rememberLead(fields, files.length); done(null); return; }
-            done(mailErr || tgErr);
-          });
-        });
-      });
-      if (CRM_URL) grace = setTimeout(crmOk, 1000);
+    if (typeof onProgress === 'function') onProgress(1, 1);
+    var settled = false, grace = null;
+    function ok() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(grace);
+      rememberLead(fields, 0);
+      done(null);
+    }
+    sendToCrm(fields, function (err) {
+      if (!err) { ok(); return; }
+      if (settled) return;
+      settled = true;
+      clearTimeout(grace);
+      done(err);
     });
+    grace = setTimeout(ok, 1200);
   }
+
+
+  /* ---------- Уведомление о cookie ----------
+     Сайт обязан сообщить посетителю, что использует cookie и счётчик
+     статистики. Плашка показывается один раз, выбор хранится в браузере
+     посетителя и никуда не передаётся. */
+  var COOKIE_KEY = 'gks_cookie_notice';
+  function cookieNoticeSeen() {
+    try { return localStorage.getItem(COOKIE_KEY) === '1'; } catch (e) { return false; }
+  }
+  function showCookieNotice() {
+    if (cookieNoticeSeen()) return;
+    var box = document.createElement('div');
+    box.className = 'cookiebar';
+    box.setAttribute('role', 'region');
+    box.setAttribute('aria-label', 'Уведомление об использовании cookie');
+    box.innerHTML = '<p>Сайт использует cookie и Яндекс.Метрику, чтобы считать посещения ' +
+      'и понимать, какие страницы полезны. Эти сведения обезличены. Подробности — в ' +
+      '<a href="/privacy.html">политике обработки персональных данных</a>.</p>' +
+      '<button type="button" class="btn btn--primary">Понятно</button>';
+    box.querySelector('button').addEventListener('click', function () {
+      try { localStorage.setItem(COOKIE_KEY, '1'); } catch (e) {}
+      box.remove();
+      document.body.classList.remove('has-cookiebar');
+    });
+    document.body.appendChild(box);
+    document.body.classList.add('has-cookiebar');
+  }
+  showCookieNotice();
 
   /* ---------- Телефон: поле сразу начинается с +7 ---------- */
   function attachPhoneMask(el) {
@@ -487,6 +387,7 @@
     var list = document.getElementById(listId);
     var err = document.getElementById(errId);
     var state = { files: [] };
+    state.clear = function () { state.files = []; };
     if (!input || !list) return state;
 
     function size(b) {
@@ -640,9 +541,12 @@
     if (f && f.classList) f.classList.toggle('field--err', !!bad);
     if (bad) { try { el.focus(); } catch (e) {} }
   }
-  function checkContacts(nameEl, phoneEl) {
+  // Галочка согласия заранее не проставлена: согласие на обработку
+  // персональных данных должно быть активным действием посетителя.
+  function checkContacts(nameEl, phoneEl, agreeEl) {
     markField(nameEl, false);
     markField(phoneEl, false);
+    if (agreeEl) agreeEl.closest('.consent').classList.remove('consent--bad');
     if (!nameEl || nameEl.value.trim().length < 2) {
       markField(nameEl, true);
       return 'Напишите, как к вам обращаться.';
@@ -651,6 +555,10 @@
       markField(phoneEl, true);
       return 'Введите телефон полностью — 10 цифр после +7.';
     }
+    if (agreeEl && !agreeEl.checked) {
+      agreeEl.closest('.consent').classList.add('consent--bad');
+      return 'Отметьте согласие на обработку персональных данных — без него мы не вправе принять заявку.';
+    }
     return null;
   }
   if (leadForm) {
@@ -658,7 +566,7 @@
       e.preventDefault();
       var name = lmName.value.trim();
       var phone = lmPhone.value.trim();
-      var problem = checkContacts(lmName, lmPhone);
+      var problem = checkContacts(lmName, lmPhone, document.getElementById('lmAgree'));
       if (problem) {
         lmErr.hidden = false;
         lmErr.textContent = problem;
@@ -708,7 +616,7 @@
 
     heroForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      var problem = checkContacts(hfName, hfPhone);
+      var problem = checkContacts(hfName, hfPhone, document.getElementById('hfAgree'));
       if (problem) {
         hfErr.hidden = false;
         hfErr.textContent = problem;
@@ -789,7 +697,7 @@
 
     pageForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      var problem = checkContacts(pfName, pfPhone);
+      var problem = checkContacts(pfName, pfPhone, document.getElementById('pfAgree'));
       if (problem) {
         pfErr.hidden = false;
         pfErr.textContent = problem;
@@ -1044,7 +952,7 @@
       e.preventDefault();
       var name = galName.value.trim();
       var phone = galPhone.value.trim();
-      var problem = checkContacts(galName, galPhone);
+      var problem = checkContacts(galName, galPhone, document.getElementById('galAgree'));
       if (problem) {
         galErr.hidden = false;
         galErr.textContent = problem;
@@ -1122,7 +1030,8 @@
     if (n === 5) {
       var name = document.getElementById('qName').value.trim();
       var phone = document.getElementById('qPhone').value.replace(/\D/g, '');
-      return name.length >= 2 && phone.length >= 10;
+      var agree = document.getElementById('qAgree');
+      return name.length >= 2 && phone.length >= 10 && (!agree || agree.checked);
     }
     return true;
   }
@@ -1157,6 +1066,10 @@
   });
 
   var qErr = document.getElementById('qErr');
+  var qAgreeBox = document.getElementById('qAgree');
+  if (qAgreeBox) qAgreeBox.addEventListener('change', function () {
+    if (qNext) qNext.disabled = !stepValid(quiz.step);
+  });
 
   if (qNext) qNext.addEventListener('click', function () {
     if (!stepValid(quiz.step)) return;
