@@ -442,26 +442,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz__mgr a { display: inline-block; margin-top: 7px; font-size: clamp(22px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.02em; color: #fff; }
 .quiz__mgr a:hover { color: #7fb0ff; }
 .quiz__mgr small { display: block; font-size: 12.5px; color: #6f8392; margin-top: 7px; }
-.quiz__main { padding: clamp(28px, 3.5vw, 46px); display: flex; flex-direction: column; }
-.quiz__bar { height: 5px; border-radius: 5px; background: var(--bg-2); overflow: hidden; margin-bottom: 8px; }
-.quiz__bar i { display: block; height: 100%; width: 20%; background: var(--accent); border-radius: 5px; transition: width .4s var(--ease); }
-.quiz__count { font-size: 13px; color: var(--ink-3); font-family: var(--mono); margin-bottom: 22px; }
-.qstep { display: none; animation: fade .4s var(--ease); }
-.qstep.active { display: block; }
+.quiz__main { padding: clamp(28px, 3.5vw, 46px); display: flex; flex-direction: column; justify-content: center; }
+.quiz__form-title { font-size: clamp(20px, 1.7vw, 24px); font-weight: 700; letter-spacing: -.02em; }
+.quiz__form-sub { font-size: 14px; color: var(--ink-3); line-height: 1.55; margin: 8px 0 22px; }
 @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.qstep h4 { font-size: 21px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
-.qstep .qsub { color: var(--ink-3); font-size: 14.5px; margin-bottom: 22px; }
-.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.opt {
-  border: 1.5px solid var(--line); border-radius: var(--r-sm); padding: 16px 18px; text-align: left;
-  display: flex; align-items: center; gap: 13px; font-weight: 500; font-size: 15.5px; color: var(--ink);
-  transition: border-color .2s, background .2s, transform .2s var(--ease);
-}
-.opt:hover { border-color: var(--accent); transform: translateY(-2px); }
-.opt.sel { border-color: var(--accent); background: var(--accent-soft); }
-.opt .ic { width: 38px; height: 38px; border-radius: 10px; background: var(--bg-2); color: var(--accent-2); display: flex; align-items: center; justify-content: center; flex: none; }
-.opt .ic svg { width: 20px; height: 20px; }
-.opt.sel .ic { background: var(--accent); color: #fff; }
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--ink-2); }
 .field input {
@@ -470,19 +454,6 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .field input::placeholder { color: var(--ink-3); }
 .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(31,95,212,.12); }
-.range-wrap { display: flex; align-items: center; gap: 18px; }
-.range-wrap input[type=range] { flex: 1; accent-color: var(--accent); height: 6px; }
-.range-val { font-family: var(--mono); font-size: 22px; font-weight: 600; min-width: 4ch; }
-.range-val small { font-size: 13px; color: var(--ink-3); }
-.quiz__nav { display: flex; gap: 12px; margin-top: 26px; align-items: center; }
-.quiz__nav .spacer { flex: 1; }
-.quiz__back { color: var(--ink-2); font-weight: 600; font-size: 15px; padding: 10px 6px; }
-.quiz__back:hover { color: var(--ink); }
-.quiz__done { text-align: center; padding: 20px 0; }
-.quiz__done .check { width: 70px; height: 70px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-.quiz__done .check svg { width: 34px; height: 34px; }
-.quiz__done h4 { font-size: 24px; }
-.quiz__done p { color: var(--ink-2); margin-top: 10px; }
 .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; color: var(--ink-3); margin-top: 14px; cursor: pointer; }
 .consent input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent-2); cursor: pointer; }
 .consent a { color: var(--accent-2); text-decoration: underline; }
@@ -833,8 +804,7 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
   body { font-size: 16px; }
   .container { padding-inline: 18px; }
   .nav .btn--primary { display: none; }
-  .seg-grid, .sys-grid, .opts { grid-template-columns: 1fr; }
-  .trust__grid { grid-template-columns: 1fr; gap: 26px; }
+  .seg-grid, .sys-grid,   .trust__grid { grid-template-columns: 1fr; gap: 26px; }
   .cause { grid-template-columns: 1fr; gap: 14px; padding: 24px 0; }
   .cause__n { padding-top: 0; }
   .case__spec { grid-template-columns: 1fr 1fr; }
@@ -946,9 +916,29 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 .page-facts div { display: flex; flex-direction: column; }
 .page-facts b { font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
 .page-facts small { font-size: 13px; color: var(--ink-3); }
-.page-hero__media { margin: 0; }
-.page-hero__media img { width: 100%; height: auto; border-radius: 18px; display: block; }
-.page-hero__media figcaption { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+.page-hero__alt { margin-top: 20px; font-size: 14px; color: var(--ink-3); line-height: 1.55; }
+.page-hero__alt a { color: var(--accent-2); font-weight: 600; }
+
+/* Форма в шапке внутренней страницы: за ней нет видео, поэтому плотный фон
+   вместо стекла — так текст читается увереннее. */
+.hero__form--page {
+  background: var(--panel);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+  align-self: start;
+}
+
+/* Фото объекта полосой под шапкой */
+.page-banner { margin: 10px 0 0; }
+.page-banner img {
+  width: 100%; height: auto; aspect-ratio: 21 / 8; object-fit: cover;
+  border-radius: var(--r); display: block;
+}
+.page-banner figcaption { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+@media (max-width: 760px) {
+  .page-banner img { aspect-ratio: 3 / 2; }
+}
 
 .narrow { max-width: 880px; }
 /* Длина строки: 66–72 знака читаются ровно, 85 — уже утомляют.
@@ -1028,7 +1018,16 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 .link-more { font-weight: 600; color: var(--accent); }
 
 @media (max-width: 860px) {
-  .page-hero__inner { grid-template-columns: 1fr; }
+  /* На телефоне форма должна быть сразу после вводного абзаца, а не за
+     цифрами и телефоном: до неё иначе приходится листать целый экран. */
+  .page-hero__inner { display: flex; flex-direction: column; }
+  .page-hero__inner > div:first-child { display: contents; }
+  .page-hero h1      { order: 1; }
+  .page-rev          { order: 1; }
+  .page-lead         { order: 2; }
+  .hero__form--page  { order: 3; margin-top: 4px; }
+  .page-facts        { order: 4; }
+  .page-hero__alt    { order: 5; }
   .grid-2 { grid-template-columns: 1fr; }
 }
 

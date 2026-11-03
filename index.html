@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hero-poster.jpg" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20261104b">
+<link rel="stylesheet" href="styles.css?v=20261104d">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -274,7 +274,7 @@
       <a href="tel:+79191225271" class="nav__phone" aria-label="Позвонить Наталье, менеджеру: +7 919 122-52-71">
         <small>Наталья, менеджер</small>+7 919 122-52-71
       </a>
-      <a href="#zayavka" class="btn btn--primary">Получить расчёт</a>
+      <button type="button" class="btn btn--primary" data-lead="Шапка сайта" data-lead-title="Получить расчёт за 24 часа" data-lead-desc="Оставьте телефон — инженер перезвонит, уточнит задачу по объекту и пришлёт смету. Выезд на замер по Москве и области бесплатный.">Получить расчёт</button>
     </div>
   </div>
 </header>
@@ -672,7 +672,8 @@
   <div class="container">
     <div class="sec-head">
       <h2 class="h-sec reveal">Подберём систему и посчитаем смету</h2>
-      <p class="lead reveal" data-d="1">Ответьте на 4 вопроса — инженер получит вводные по объекту, приедет на бесплатную диагностику и пришлёт смету по слоям.</p>
+      <p class="lead reveal" data-d="1">Оставьте телефон — инженер перезвонит, уточнит задачу по объекту,
+        приедет на бесплатную диагностику и пришлёт смету по слоям.</p>
     </div>
 
     <div class="quiz reveal" data-d="1">
@@ -692,113 +693,34 @@
       </div>
 
       <div class="quiz__main">
-        <div class="quiz__bar"><i id="quizBar"></i></div>
-        <div class="quiz__count" id="quizCount">Шаг 1 из 5</div>
+        <h3 class="quiz__form-title">Оставьте заявку</h3>
+        <p class="quiz__form-sub">Три поля, комментарий — по желанию. Перезвоним в течение 30 минут в рабочее время.</p>
 
-        <form id="quizForm">
-          <!-- step 1 -->
-          <div class="qstep active" data-step="1">
-            <h4>Какой у вас объект?</h4>
-            <p class="qsub">От типа объекта зависит система покрытия.</p>
-            <div class="opts" data-group="type">
-              <button type="button" class="opt" data-val="Пищевое" data-price="4200">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M6 11v8M18 11v8"/></svg></span>
-                Пищевое производство
-              </button>
-              <button type="button" class="opt" data-val="Склад" data-price="1100">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13M9 21v-6h6v6"/></svg></span>
-                Склад / логистика
-              </button>
-              <button type="button" class="opt" data-val="Цех" data-price="2400">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l6 3V9l6 3V5l4 2v14H4z"/></svg></span>
-                Производственный цех
-              </button>
-              <button type="button" class="opt" data-val="Паркинг" data-price="1900">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 17H3v-6l2-5h11l4 5v6h-2"/></svg></span>
-                Паркинг
-              </button>
-              <button type="button" class="opt" data-val="Фарма" data-price="5200">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a4 4 0 0 1-4 6H9a4 4 0 0 1-4-6l4-8V3z"/></svg></span>
-                Фарма / чистое пом.
-              </button>
-              <button type="button" class="opt" data-val="Коммерция" data-price="1600">
-                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9z"/></svg></span>
-                Коммерция
-              </button>
-            </div>
+        <form id="calcForm" novalidate>
+          <div class="field">
+            <label for="cfName">Как к вам обращаться</label>
+            <input type="text" id="cfName" placeholder="Имя" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="cfPhone">Телефон</label>
+            <input type="tel" id="cfPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+          </div>
+          <div class="field">
+            <label for="cfComment">Коротко о задаче <span class="field__opt">— по желанию</span></label>
+            <textarea id="cfComment" rows="3" placeholder="Тип объекта, площадь, что сейчас с полом"></textarea>
           </div>
 
-          <!-- step 2 -->
-          <div class="qstep" data-step="2">
-            <h4>Площадь объекта</h4>
-            <p class="qsub">Подвиньте ползунок к нужному значению.</p>
-            <div class="range-wrap">
-              <input type="range" id="areaRange" min="100" max="10000" step="50" value="1000">
-              <div class="range-val"><span id="areaVal">1000</span><br><small>м²</small></div>
-            </div>
-          </div>
+          <p class="form-err" id="cfErr" hidden></p>
 
-          <!-- step 3 -->
-          <div class="qstep" data-step="3">
-            <h4>Какая нагрузка на пол?</h4>
-            <p class="qsub">Влияет на толщину и тип системы.</p>
-            <div class="opts" data-group="load">
-              <button type="button" class="opt" data-val="Лёгкая" data-mult="0.85"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg></span>Лёгкая (люди, тележки)</button>
-              <button type="button" class="opt" data-val="Средняя" data-mult="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>Средняя (погрузчики)</button>
-              <button type="button" class="opt" data-val="Тяжёлая" data-mult="1.25"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3zM7 18v3M17 18v3"/></svg></span>Тяжёлая (ричтраки, удары)</button>
-              <button type="button" class="opt" data-val="Мойка/химия" data-mult="1.4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg></span>Горячая мойка, химия</button>
-            </div>
-          </div>
+          <button type="submit" class="btn btn--primary btn--lg btn--block" id="cfSubmit">Получить расчёт</button>
 
-          <!-- step 4 -->
-          <div class="qstep" data-step="4">
-            <h4>Состояние основания</h4>
-            <p class="qsub">От этого зависит объём подготовки.</p>
-            <div class="opts" data-group="base">
-              <button type="button" class="opt" data-val="Новый бетон" data-add="0"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Новый ровный бетон</button>
-              <button type="button" class="opt" data-val="Рабочий" data-add="350"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>Рабочий, есть пыль</button>
-              <button type="button" class="opt" data-val="С дефектами" data-add="700"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>Трещины, перепады</button>
-              <button type="button" class="opt" data-val="Старое покрытие" data-add="500"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4 20 10 8 22H2v-6L14 4z"/></svg></span>Старое покрытие под снятие</button>
-            </div>
-          </div>
-
-          <!-- step 5 -->
-          <div class="qstep" data-step="5" id="contactStep">
-            <h4>Куда прислать точную смету?</h4>
-            <p class="qsub">Инженер свяжется, согласует выезд и пришлёт расчёт по слоям.</p>
-            <div class="field"><label for="qName">Как вас зовут</label><input type="text" id="qName" placeholder="Имя" autocomplete="name"></div>
-            <div class="field"><label for="qPhone">Телефон</label><input type="tel" id="qPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel"></div>
-            <div class="field">
-              <label for="qComment">Комментарий к заявке</label>
-              <textarea id="qComment" rows="3" placeholder="Сроки, особенности объекта, вопросы по смете — что важно учесть"></textarea>
-              <span class="field__hint">Необязательно, но помогает точнее посчитать смету.</span>
-            </div>
-            <p class="field__hint field__hint--files">Чертежи, фото основания и техническое задание
-              пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a> или в
-              <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> —
-              мы свяжем их с вашей заявкой по номеру телефона.</p>
-            <label class="consent">
-              <input type="checkbox" id="qAgree">
-              <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
-            </label>
-            <p class="form-err" id="qErr" hidden></p>
-          </div>
-
-          <!-- done -->
-          <div class="qstep" data-step="6">
-            <div class="quiz__done">
-              <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
-              <h4>Заявка принята</h4>
-              <p>Наталья свяжется с вами в течение рабочего дня, уточнит детали и согласует выезд инженера.</p>
-            </div>
-          </div>
-
-          <div class="quiz__nav" id="quizNav">
-            <button type="button" class="quiz__back" id="quizBack" style="visibility:hidden">← Назад</button>
-            <span class="spacer"></span>
-            <button type="button" class="btn btn--primary" id="quizNext" disabled>Далее</button>
-          </div>
+          <label class="consent">
+            <input type="checkbox" id="cfAgree">
+            <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+          </label>
         </form>
+
+        <p class="form-ok" id="cfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
       </div>
     </div>
   </div>
@@ -852,7 +774,7 @@
           <p>Выезд инженера и приборная диагностика основания бесплатно. Дальше точная смета, которая не изменится после подписания.</p>
         </div>
         <div class="actions">
-          <a href="#quiz" class="btn btn--light btn--lg btn--block">Оставить заявку</a>
+          <button type="button" class="btn btn--light btn--lg btn--block" data-lead="Блок в конце страницы">Оставить заявку</button>
           <a href="tel:+79191225271" class="phone">+7 919 122-52-71</a>
           <small>Наталья, менеджер · с 9:00 до 20:00, без выходных</small>
           <div class="msgs msgs--dark">
@@ -997,7 +919,6 @@
       </div>
     </form>
 
-    <p class="qform__alt" id="leadAlt">Хотите сразу рассказать об объекте? <button type="button" id="leadToQuiz">Ответить на 4 вопроса</button></p>
   </div>
 </div>
 
@@ -1076,6 +997,6 @@
     <figcaption class="lb__bar"><span class="lb__count" id="lbCount"></span><span id="lbCap"></span></figcaption>
   </figure>
 </div>
-<script src="script.js?v=20261104b"></script>
+<script src="script.js?v=20261104d"></script>
 </body>
 </html>

@@ -154,12 +154,14 @@
     }, { passive: true });
   }
   if (promoClose) promoClose.addEventListener('click', function () { suppressPromo(3); hidePromo(); });
+  // Кнопка в плашке со скидкой открывает форму на месте: по длинной странице
+  // человека не гоняем.
   if (promoCta) promoCta.addEventListener('click', function () {
     promoTaken = true;
     suppressPromo(PROMO_HIDE_DAYS);
     hidePromo();
-    var q = document.getElementById('quiz');
-    if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    openLead('Скидка 10% на монтаж', 'Получить расчёт со скидкой 10%',
+      'Скидка действует на монтаж. Оставьте телефон — инженер перезвонит, уточнит задачу и пришлёт смету уже с учётом скидки.');
   });
 
   function updateFab() {
@@ -430,10 +432,8 @@
     return state;
   }
 
-  var qFiles = attachFilePicker('qFiles', 'qFileList', 'qFileErr');
   var galFiles = attachFilePicker('galFiles', 'galFileList', 'galFileErr');
   var lmFiles = attachFilePicker('lmFiles', 'lmFileList', 'lmFileErr');
-  attachPhoneMask(document.getElementById('qPhone'));
   attachPhoneMask(document.getElementById('galPhone'));
   attachPhoneMask(document.getElementById('lmPhone'));
   attachPhoneMask(document.getElementById('hfPhone'));
@@ -500,12 +500,6 @@
   });
   document.querySelectorAll('[data-lead-close]').forEach(function (b) {
     b.addEventListener('click', closeLead);
-  });
-  var leadToQuiz = document.getElementById('leadToQuiz');
-  if (leadToQuiz) leadToQuiz.addEventListener('click', function () {
-    closeLead();
-    var q = document.getElementById('quiz');
-    if (q) q.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   });
   // Возврат со страницы «спасибо»: открываем форму с прошлыми данными,
   // чтобы человек поправил опечатку, а не набирал всё заново.
@@ -981,130 +975,47 @@
     });
   }
 
-  /* ============================================================
-     QUIZ / CALCULATOR
-     ============================================================ */
-  // Цену клиенту не показываем — квиз только собирает вводные по объекту
-  // и отдаёт их менеджеру вместе с заявкой.
-  var quiz = {
-    type: null, typeLabel: '',
-    area: 1000,
-    loadSel: false, loadLabel: '',
-    baseLabel: '',
-    step: 1, totalSteps: 5
-  };
+  /* ---------- Форма в разделе расчёта ---------- */
+  var calcForm = document.getElementById('calcForm');
+  if (calcForm) {
+    var cfName = document.getElementById('cfName');
+    var cfPhone = document.getElementById('cfPhone');
+    var cfComment = document.getElementById('cfComment');
+    var cfSubmit = document.getElementById('cfSubmit');
+    var cfErr = document.getElementById('cfErr');
+    var cfOk = document.getElementById('cfOk');
+    attachPhoneMask(cfPhone);
 
-  var qBar = document.getElementById('quizBar');
-  var qCount = document.getElementById('quizCount');
-  var qNext = document.getElementById('quizNext');
-  var qBack = document.getElementById('quizBack');
-  var qSteps = document.querySelectorAll('.qstep');
-  var areaRange = document.getElementById('areaRange');
-  var areaVal = document.getElementById('areaVal');
+    calcForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var problem = checkContacts(cfName, cfPhone, document.getElementById('cfAgree'));
+      if (problem) { cfErr.hidden = false; cfErr.textContent = problem; return; }
+      cfErr.hidden = true;
+      cfSubmit.disabled = true;
+      cfSubmit.textContent = 'Отправляем…';
 
-  function showStep(n) {
-    quiz.step = n;
-    qSteps.forEach(function (s) { s.classList.toggle('active', parseInt(s.getAttribute('data-step'), 10) === n); });
-    if (qBar) qBar.style.width = Math.min((n / quiz.totalSteps) * 100, 100) + '%';
-    if (qCount) qCount.textContent = n <= quiz.totalSteps ? ('Шаг ' + n + ' из ' + quiz.totalSteps) : 'Готово';
-    if (qBack) qBack.style.visibility = (n > 1 && n <= quiz.totalSteps) ? 'visible' : 'hidden';
-    if (qNext) {
-      if (n > quiz.totalSteps) { qNext.style.display = 'none'; qBack.style.display = 'none'; }
-      else {
-        qNext.style.display = '';
-        qNext.textContent = (n === quiz.totalSteps) ? 'Получить смету' : 'Далее';
-        qNext.disabled = !stepValid(n);
-      }
-    }
-  }
-
-  function stepValid(n) {
-    if (n === 1) return !!quiz.type;
-    if (n === 2) return true;
-    if (n === 3) return quiz.loadSel;
-    if (n === 4) return quiz.baseLabel !== '';
-    if (n === 5) {
-      var name = document.getElementById('qName').value.trim();
-      var phone = document.getElementById('qPhone').value.replace(/\D/g, '');
-      var agree = document.getElementById('qAgree');
-      return name.length >= 2 && phone.length >= 10 && (!agree || agree.checked);
-    }
-    return true;
-  }
-
-  // option groups
-  document.querySelectorAll('.opts').forEach(function (group) {
-    group.querySelectorAll('.opt').forEach(function (opt) {
-      opt.addEventListener('click', function () {
-        group.querySelectorAll('.opt').forEach(function (o) { o.classList.remove('sel'); });
-        opt.classList.add('sel');
-        var g = group.getAttribute('data-group');
-        if (g === 'type') { quiz.type = opt.getAttribute('data-val'); quiz.typeLabel = opt.getAttribute('data-val'); }
-        if (g === 'load') { quiz.loadSel = true; quiz.loadLabel = opt.getAttribute('data-val'); }
-        if (g === 'base') { quiz.baseLabel = opt.getAttribute('data-val'); }
-        if (qNext) qNext.disabled = !stepValid(quiz.step);
-      });
-    });
-  });
-
-  // area range
-  if (areaRange) {
-    areaRange.addEventListener('input', function () {
-      quiz.area = parseInt(areaRange.value, 10);
-      if (areaVal) areaVal.textContent = quiz.area.toLocaleString('ru-RU');
-    });
-  }
-
-  // contact validation live
-  ['qName', 'qPhone'].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('input', function () { if (qNext) qNext.disabled = !stepValid(quiz.step); });
-  });
-
-  var qErr = document.getElementById('qErr');
-  var qAgreeBox = document.getElementById('qAgree');
-  if (qAgreeBox) qAgreeBox.addEventListener('change', function () {
-    if (qNext) qNext.disabled = !stepValid(quiz.step);
-  });
-
-  if (qNext) qNext.addEventListener('click', function () {
-    if (!stepValid(quiz.step)) return;
-    if (quiz.step === quiz.totalSteps) {
-      if (qErr) qErr.hidden = true;
-      qNext.disabled = true;
-      qNext.textContent = 'Отправляем…';
-      var qComment = document.getElementById('qComment');
       submitLead({
-        'Имя': document.getElementById('qName').value.trim(),
-        'Телефон': document.getElementById('qPhone').value.trim(),
-        'Комментарий': qComment && qComment.value.trim() ? qComment.value.trim() : '—',
-        'Тип объекта': quiz.typeLabel,
-        'Площадь, м²': quiz.area,
-        'Нагрузка': quiz.loadLabel,
-        'Основание': quiz.baseLabel,
+        'Имя': cfName.value.trim(),
+        'Телефон': cfPhone.value.trim(),
+        'Комментарий': cfComment.value.trim() || '—',
+        'Интересует': 'Расчёт сметы',
         'Акция': promoTaken ? 'Скидка 10% на монтаж' : '—',
         'Источник': 'Подбор системы на сайте'
-      }, qFiles.files, function (n, total) {
-        qNext.textContent = 'Отправляем файл ' + n + ' из ' + total + '…';
-      }, function (err) {
-        qNext.disabled = false;
-        qNext.textContent = 'Получить смету';
+      }, null, null, function (err) {
         if (err) {
-          if (qErr) { qErr.hidden = false; qErr.innerHTML = LEAD_FAIL; }
+          cfSubmit.disabled = false;
+          cfSubmit.textContent = 'Получить расчёт';
+          cfErr.hidden = false;
+          cfErr.innerHTML = LEAD_FAIL;
           return;
         }
-        showStep(quiz.totalSteps + 1);
+        calcForm.hidden = true;
+        cfOk.hidden = false;
         goThanks();
       });
-      return;
-    }
-    showStep(quiz.step + 1);
-  });
-  if (qBack) qBack.addEventListener('click', function () { if (quiz.step > 1) showStep(quiz.step - 1); });
+    });
+  }
 
-  // init
-  if (areaVal) areaVal.textContent = quiz.area.toLocaleString('ru-RU');
-  showStep(1);
   onScroll();
   updateFab();
 })();

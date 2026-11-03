@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="/assets/gal/ware-01.jpg" fetchpriority="high">
-<link rel="stylesheet" href="/styles.css?v=20261104b">
+<link rel="stylesheet" href="/styles.css?v=20261104d">
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -234,7 +234,7 @@
       <a href="tel:+79191225271" class="nav__phone" aria-label="Позвонить Наталье, менеджеру: +7 919 122-52-71">
         <small>Наталья, менеджер</small>+7 919 122-52-71
       </a>
-      <a href="#zayavka" class="btn btn--primary">Получить расчёт</a>
+      <button type="button" class="btn btn--primary" data-lead="Шапка сайта" data-lead-title="Получить расчёт за 24 часа" data-lead-desc="Оставьте телефон — инженер перезвонит, уточнит задачу по объекту и пришлёт смету. Выезд на замер по Москве и области бесплатный.">Получить расчёт</button>
     </div>
   </div>
 </header>
@@ -256,14 +256,51 @@
           <div><b>от 200 м²</b><small>минимальный объект</small></div>
           <div><b>пн–сб 9:00–20:00</b><small>время работы</small></div>
         </div>
-        <a href="#zayavka" class="btn btn--primary btn--lg">Вызвать инженера на замер</a>
+        <p class="page-hero__alt">Не хотите заполнять — позвоните: <a href="tel:+79191225271">+7 919 122-52-71</a>, Наталья, менеджер. Пн–Сб, 9:00–20:00.</p>
       </div>
-      <figure class="page-hero__media">
-        <img src="/assets/gal/ware-01.jpg" width="1280" height="859" fetchpriority="high" alt="Стеллажный склад с упрочнённым полимерным покрытием и разметкой проездов">
-        <figcaption>Работаем на объектах по всей Москве и Московской области</figcaption>
-      </figure>
-    </div>
+
+      <aside class="hero__form hero__form--page">
+        <h2 class="hero__form-title">Вызвать инженера на замер</h2>
+        <p class="hero__form-sub">Инженер перезвонит, уточнит задачу и пришлёт смету. Без навязчивых звонков.</p>
+
+        <form id="heroForm" novalidate>
+          <div class="field">
+            <label for="hfName">Как к вам обращаться</label>
+            <input type="text" id="hfName" placeholder="Имя" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="hfPhone">Телефон</label>
+            <input type="tel" id="hfPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+          </div>
+          <div class="field">
+            <label for="hfComment">Коротко о задаче <span class="field__opt">— по желанию</span></label>
+            <textarea id="hfComment" rows="2" placeholder="Цех 600 м² в Подольске, нужен замер"></textarea>
+          </div>
+
+          <p class="form-err" id="hfErr" hidden></p>
+
+          <button type="submit" class="btn btn--primary btn--lg hero__form-btn" id="hfSubmit">
+            Получить расчёт
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+          <label class="consent">
+            <input type="checkbox" id="hfAgree">
+            <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+          </label>
+        </form>
+
+        <p class="form-ok" id="hfOk" hidden>Заявка ушла. Перезвоним в течение 30 минут в рабочее время.</p>
+      </aside>    </div>
   </section>
+
+  <figure class="page-banner">
+    <div class="container">
+      <img src="/assets/gal/ware-01.jpg" width="1280" height="859" fetchpriority="high" alt="Стеллажный склад с упрочнённым полимерным покрытием и разметкой проездов">
+      <figcaption>Работаем на объектах по всей Москве и Московской области</figcaption>
+    </div>
+  </figure>
+
 
   <section class="section">
     <div class="container narrow">
@@ -399,66 +436,51 @@
 
 <footer class="footer">
   <div class="container">
-    <div class="footer__top">
-      <div class="footer__brand">
-        <a href="/" class="brand" aria-label="ГК Сфера">
-          <img src="/assets/logo-light.png" alt="ГК Сфера" width="900" height="275">
-        </a>
-        <p>Устройство промышленных полимерных полов под задачу объекта. Подбор системы,
-          монтаж без остановки производства, гарантия в договоре.</p>
-      </div>
-      <div>
-        <h5>Объекты</h5>
-        <ul>
-          <li><a href="/poly-dlya-sklada/">Полы для склада</a></li>
-          <li><a href="/poly-dlya-pishchevogo-proizvodstva/">Пищевое производство</a></li>
-          <li><a href="/poly-dlya-ceha/">Производственный цех</a></li>
-          <li><a href="/poly-dlya-farmproizvodstva/">Фарма и чистые помещения</a></li>
-          <li><a href="/poly-dlya-parkinga/">Паркинги</a></li>
-          <li><a href="/poly-dlya-kommercii/">Коммерческие помещения</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>Системы</h5>
-        <ul>
-          <li><a href="/poliuretan-cementnye-poly/">Полиуретан-цементные</a></li>
-          <li><a href="/epoksidnye-nalivnye-poly/">Эпоксидные наливные</a></li>
-          <li><a href="/poliuretanovye-poly/">Полиуретановые</a></li>
-          <li><a href="/kvarcnapolnennye-poly/">Кварцнаполненные</a></li>
-          <li><a href="/mma-poly/">Метилметакрилат (ММА)</a></li>
-          <li><a href="/polimochevina/">Полимочевина</a></li>
-          <li><a href="/ceny/">Цены на полимерные полы</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>Полезное</h5>
-        <ul>
-          <li><a href="/chto-takoe-polimernye-poly/">Что такое полимерные полы</a></li>
-          <li><a href="/epoksid-ili-poliuretan/">Эпоксид или полиуретан</a></li>
-          <li><a href="/pochemu-otslaivaetsya-polimernyy-pol/">Почему отслаивается пол</a></li>
-          <li><a href="/skolko-sluzhit-polimernyy-pol/">Сколько служит пол</a></li>
-          <li><a href="/vreden-li-polimernyy-pol/">Вреден ли полимерный пол</a></li>
-          <li><a href="/poly-dlya-garazha/">Полы для гаража</a></li>
-          <li><a href="/poly-v-kvartire/">Полы в квартире</a></li>
-        </ul>
-      </div>
-      <div class="footer__contacts">
-        <h5><a href="/kontakty/">Контакты</a></h5>
-        <span>Наталья, менеджер</span>
-        <a href="tel:+79191225271">+7 919 122-52-71</a>
-        <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a>
-        <span style="margin-top:12px">Москва и область, работаем по всей России</span>
-        <span>Пн–Сб, 9:00–20:00</span>
-      </div>
-    </div>
-    <div class="footer__bottom">
+    <div class="footer__bottom" style="border-top:0;padding-top:0">
       <span>© 2026 ГК «Сфера». Устройство промышленных полов.</span>
       <span class="footer__made">Сайт разработан и продвигается компанией <a href="https://odinpotok.ru" target="_blank" rel="noopener">Один поток</a></span>
-      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068 · <a href="/privacy.html">Политика обработки персональных данных</a> · <a href="/soglasie/">Согласие на обработку данных</a></span>
+      <span>ИП Василюк Наталья Игоревна, ИНН 771689466068</span>
     </div>
   </div>
 </footer>
 
-<script src="/script.js?v=20261104b"></script>
+
+<!-- Быстрая заявка: открывается по кнопкам, не уводя со страницы -->
+<div class="qform" id="lead" hidden>
+  <div class="qform__backdrop" data-lead-close></div>
+  <div class="qform__panel" role="dialog" aria-modal="true" aria-labelledby="leadTitle">
+    <button type="button" class="qform__close" data-lead-close aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3 id="leadTitle">Получить расчёт за 24 часа</h3>
+    <p class="qform__desc" id="leadDesc"></p>
+
+    <form id="leadForm" novalidate>
+      <div class="field"><label for="lmName">Как вас зовут</label><input type="text" id="lmName" placeholder="Имя" autocomplete="name"></div>
+      <div class="field"><label for="lmPhone">Телефон</label><input type="tel" id="lmPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel"></div>
+      <div class="field">
+        <label for="lmComment">Комментарий <span class="field__opt">по желанию</span></label>
+        <textarea id="lmComment" rows="3" placeholder="Тип объекта, площадь, сроки, что сейчас с полом"></textarea>
+      </div>
+      <p class="field__hint field__hint--files">Чертежи, фото основания и техническое задание
+        пришлите на <a href="mailto:gksphere@inbox.ru">gksphere@inbox.ru</a> или в
+        <a href="https://t.me/+79191225271" target="_blank" rel="noopener">Telegram</a> —
+        мы свяжем их с вашей заявкой по номеру телефона.</p>
+      <button type="submit" class="btn btn--primary btn--lg btn--block" id="lmSubmit">Отправить заявку</button>
+      <label class="consent">
+        <input type="checkbox" id="lmAgree">
+        <span>Я ознакомлен с <a href="/privacy.html" target="_blank" rel="noopener">политикой обработки персональных данных</a> и даю <a href="/soglasie/" target="_blank" rel="noopener">согласие на обработку</a> указанных мной данных.</span>
+      </label>
+      <p class="form-err" id="lmErr" hidden></p>
+      <div class="gal__ok" id="lmOk" hidden>
+        <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <b>Заявка принята</b>
+        <span>Инженер свяжется с вами в течение рабочего дня.</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/script.js?v=20261104d"></script>
 </body>
 </html>
