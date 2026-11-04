@@ -112,6 +112,10 @@
 - [Полы из метилметакрилата (ММА)](https://gksphere.ru/mma-poly/)
 - [Полимочевина](https://gksphere.ru/polimochevina/)
 
+- [Антистатические полы](https://gksphere.ru/antistaticheskie-poly/) — заземление, сопротивление 10⁶–10⁹ Ом
+- [Обеспыливание бетонного пола](https://gksphere.ru/obespylivanie-betonnogo-pola/) — упрочняющая пропитка
+- [Полы для открытых площадок](https://gksphere.ru/poly-dlya-otkrytyh-ploshchadok/) — мороз, ультрафиолет, реагенты
+
 Разбор вопросов:
 - [Что такое полимерные полы](https://gksphere.ru/chto-takoe-polimernye-poly/) — устройство, слои, отличие от бетона и плитки
 - [Эпоксид или полиуретан](https://gksphere.ru/epoksid-ili-poliuretan/) — сравнение систем по задачам
@@ -120,6 +124,10 @@
 - [Вреден ли полимерный пол](https://gksphere.ru/vreden-li-polimernyy-pol/) — запах, испарения, допуски
 - [Полы для гаража](https://gksphere.ru/poly-dlya-garazha/) — выбор системы, требования к бетону
 - [Полимерные полы в квартире](https://gksphere.ru/poly-v-kvartire/) — плюсы, минусы, тёплый пол
+- [Технология устройства](https://gksphere.ru/tehnologiya-ustroystva/) — семь этапов и что контролируется
+- [Подготовка основания](https://gksphere.ru/podgotovka-osnovaniya/) — шлифовка, фрезеровка, дробеструй
+- [Толщина наливного пола](https://gksphere.ru/tolshchina-nalivnogo-pola/) — таблица подбора по нагрузке
+- [Сколько сохнет наливной пол](https://gksphere.ru/skolko-sohnet-nalivnoy-pol/) — сроки по системам
 
 - [Контакты](https://gksphere.ru/kontakty/) — телефон, почта, регион работ, реквизиты
 
@@ -131,4 +139,4 @@
 
 Москва и Московская область. Выезд инженера на замер бесплатный.
 
-Обновлено: 3 ноября 2026.
+Обновлено: 4 ноября 2026.
