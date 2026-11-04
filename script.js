@@ -204,6 +204,14 @@
      Пока адрес пуст, сайт работает по-старому: почта + Telegram из браузера.
      Как только сюда вписан адрес веб-приложения Google Apps Script,
      заявка уходит одним запросом туда, а рассылку по каналам делает сервер. */
+  /* Основной путь — приёмник на нашем же хостинге: он первым записывает
+     заявку в базу в России, как требует закон, и уже оттуда отправляет копию
+     в CRM. Секрет CRM при этом остаётся на сервере и в коде страницы не нужен. */
+  var LEAD_URL = '/lead.php';
+
+  /* Запасной путь на время, пока приёмник не настроен: заявка идёт напрямую
+     в CRM. Здесь секрет виден в коде — поэтому после настройки хостинга
+     эти две строки удаляются. */
   var CRM_URL = 'https://script.google.com/macros/s/AKfycbwQsgW5oT1HD-kF8x6SuGG2f6qxD9OWoW9TYBeBPIb8gZ0_xl7jK-HSy_DQljh5xETj/exec';
   var CRM_TOKEN = 'GKSPHERE2004';
 
@@ -252,29 +260,59 @@
     'Галерея объектов на сайте': 'Сайт: галерея объектов'
   };
 
+  function formEncode(obj) {
+    var parts = [];
+    Object.keys(obj).forEach(function (k) {
+      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(obj[k]));
+    });
+    return parts.join('&');
+  }
+
+  /* Ответ считаем осмысленным, только если это JSON с полем ok.
+     Страница 404 или ошибка сервера таким не будет — значит приёмника нет
+     и надо идти запасным путём. */
+  function postForm(url, body, done) {
+    fetch(url, {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: formEncode(body)
+    }).then(function (r) {
+      return r.text().then(function (text) {
+        var data = null;
+        try { data = JSON.parse(text); } catch (e) {}
+        return { ok: r.ok, data: data };
+      });
+    }).then(function (res) {
+      if (res.data && typeof res.data.ok !== 'undefined') {
+        done(res.data.ok ? null : new Error(res.data.error || 'отказ'), true);
+        return;
+      }
+      done(new Error('нет ответа приёмника'), false);
+    }).catch(function (e) { done(e, false); });
+  }
+
   function sendToCrm(fields, done) {
-    if (!CRM_URL || !window.fetch) { done(new Error('crm off')); return; }
-    var body = { token: CRM_TOKEN };
+    if (!window.fetch) { done(new Error('fetch unsupported')); return; }
+
+    var body = {};
     Object.keys(fields).forEach(function (k) {
       var key = CRM_FIELD_MAP[k] || k;
       var val = fields[k];
       if (key === 'Источник') val = CRM_SOURCE_MAP[val] || val;
-      if (key === 'Интересует' && body['Интересует']) return; // не затираем уже заполненное
+      if (key === 'Интересует' && body['Интересует']) return; // не затираем заполненное
       body[key] = val;
     });
     Object.keys(UTM).forEach(function (k) { body[k] = UTM[k]; });
-    var parts = [];
-    Object.keys(body).forEach(function (k) {
-      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(body[k]));
+
+    postForm(LEAD_URL, body, function (err, answered) {
+      // приёмник ответил по существу — его слово окончательное
+      if (answered) { done(err); return; }
+      // приёмника нет: пока не настроен хостинг, идём напрямую в CRM
+      if (!CRM_URL) { done(err || new Error('crm off')); return; }
+      var direct = { token: CRM_TOKEN };
+      Object.keys(body).forEach(function (k) { direct[k] = body[k]; });
+      postForm(CRM_URL, direct, function (e2) { done(e2); });
     });
-    fetch(CRM_URL, {
-      method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-      body: parts.join('&')
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'crm error');
-      done(null);
-    }).catch(function (e) { done(e); });
   }
 
   // от корня: со внутренних страниц относительный путь уводил бы в никуда
