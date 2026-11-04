@@ -463,6 +463,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .field__hint--files { display: block; margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
 .field__hint--files a { color: var(--accent-2); text-decoration: underline; }
 
+/* ---------- Блок с ценами на главной ---------- */
+.prices__note { margin-top: 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); max-width: 78ch; }
+.prices__note a { color: var(--accent-2); text-decoration: underline; font-weight: 600; }
+.prices__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 26px; }
+.prices__cta span { font-size: 14px; color: var(--ink-3); }
+#prices .tbl { box-shadow: var(--sh-1); }
+#prices .tbl tbody tr:nth-child(even) td { background: #f7f9fb; }
+
 /* ---------- Уведомление о cookie ---------- */
 .cookiebar { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 120;
   display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; justify-content: space-between;
