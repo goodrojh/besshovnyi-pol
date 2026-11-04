@@ -268,9 +268,10 @@
     return parts.join('&');
   }
 
-  /* Ответ считаем осмысленным, только если это JSON с полем ok.
-     Страница 404 или ошибка сервера таким не будет — значит приёмника нет
-     и надо идти запасным путём. */
+  /* Ответ считаем окончательным, только если сервер ответил кодом ниже 500
+     и прислал JSON с полем ok. Код 5xx означает, что приёмник есть, но
+     сломан или не настроен: заявку в этом случае нельзя терять, идём
+     запасным путём. 404 и сетевой сбой — тоже запасной путь. */
   function postForm(url, body, done) {
     fetch(url, {
       method: 'POST', keepalive: true,
@@ -280,14 +281,15 @@
       return r.text().then(function (text) {
         var data = null;
         try { data = JSON.parse(text); } catch (e) {}
-        return { ok: r.ok, data: data };
+        return { status: r.status, data: data };
       });
     }).then(function (res) {
-      if (res.data && typeof res.data.ok !== 'undefined') {
+      var usable = res.status < 500 && res.data && typeof res.data.ok !== 'undefined';
+      if (usable) {
         done(res.data.ok ? null : new Error(res.data.error || 'отказ'), true);
         return;
       }
-      done(new Error('нет ответа приёмника'), false);
+      done(new Error('приёмник недоступен'), false);
     }).catch(function (e) { done(e, false); });
   }
 
