@@ -8,3 +8,7 @@ desktop.ini
 Thumbs.db
 .DS_Store
 *.tmp
+
+# настройки с паролями и журналы — только на сервере
+gksphere-config.php
+*.log
