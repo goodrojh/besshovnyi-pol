@@ -12,7 +12,12 @@
     var st = window.scrollY || document.documentElement.scrollTop;
     var h = document.documentElement.scrollHeight - window.innerHeight;
     if (progress) progress.style.width = (h > 0 ? (st / h) * 100 : 0) + '%';
-    if (nav) nav.classList.toggle('scrolled', st > 40);
+    if (nav) {
+      nav.classList.toggle('scrolled', st > 40);
+      /* На телефоне шапка идёт в две строки. Когда человек уже читает,
+         вторая строка убирается и возвращает экрану 48 px. */
+      nav.classList.toggle('nav--compact', st > 220);
+    }
     updateProcLine();
   }
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -372,8 +377,8 @@
     box.className = 'cookiebar';
     box.setAttribute('role', 'region');
     box.setAttribute('aria-label', 'Уведомление об использовании cookie');
-    box.innerHTML = '<p>Сайт использует cookie и Яндекс.Метрику, чтобы считать посещения ' +
-      'и понимать, какие страницы полезны. Эти сведения обезличены. Подробности — в ' +
+    box.innerHTML = '<p>Сайт использует cookie и Яндекс.Метрику для обезличенной ' +
+      'статистики посещений. Подробности — в ' +
       '<a href="/privacy.html">политике обработки персональных данных</a>.</p>' +
       '<button type="button" class="btn btn--primary">Понятно</button>';
     box.querySelector('button').addEventListener('click', function () {

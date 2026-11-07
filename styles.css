@@ -1129,3 +1129,78 @@ body.qform-open .fab, body.qform-open .promo { display: none; }
 
 /* выделение внутри строк перелинковки: без синтетического начертания */
 .seg-links b { font-weight: 700; }
+
+
+/* ============================================================
+   ТЕЛЕФОН: место на экране
+   На 375×812 шапка и плашка про cookie занимали 303 px — больше трети
+   экрана. Здесь всё, что это чинит: строка разделов уезжает при
+   прокрутке, плашки ужимаются и перестают накладываться друг на друга,
+   подписи и кнопки доведены до читаемых размеров.
+   ============================================================ */
+@media (max-width: 1100px) {
+  /* Строка разделов нужна в начале страницы. Дальше человек читает,
+     и 48 px закреплённой высоты ему только мешают. */
+  .navlinks {
+    overflow: hidden; overflow-x: auto;
+    max-height: 56px; opacity: 1;
+    transition: max-height .22s var(--ease), opacity .16s linear, margin-top .22s var(--ease);
+  }
+  .nav--compact .navlinks { max-height: 0; opacity: 0; margin-top: -8px; }
+  .nav--compact { min-height: 0; }
+
+  /* Палец промахивается по кнопке ниже 44 px — это нижняя граница
+     и у Apple, и у Google. Было 35 px. */
+  .navlinks a {
+    display: inline-flex; align-items: center; min-height: 44px;
+    font-size: 14px; padding: 0 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Две плашки внизу экрана одновременно — одна поверх другой.
+     Пока не закрыто уведомление о cookie, акцию не показываем. */
+  .has-cookiebar .promo { display: none; }
+
+  .cookiebar {
+    gap: 10px; padding: 13px 15px; border-radius: 14px;
+    box-shadow: 0 14px 36px rgba(8,16,24,.38);
+  }
+  .cookiebar p { flex: 1 1 100%; font-size: 12.5px; line-height: 1.45; }
+  .cookiebar .btn { width: 100%; height: 42px; font-size: 14.5px; }
+
+  .promo { padding: 14px; gap: 11px; }
+  .promo__badge { width: 44px; height: 44px; font-size: 14px; border-radius: 12px; }
+  .promo__body b { font-size: 15px; }
+  .promo__body p { font-size: 13px; margin-top: 5px; }
+  .promo__body .btn { margin-top: 11px; height: 44px; }
+
+  /* Подписи: 11 px на телефоне не читаются. Поднимаем до 12.5–13 px,
+     основной текст и так 16 px. */
+  .nav__phone small { font-size: 12.5px; }
+  .crumbs { font-size: 13px; }
+  .page-rev,
+  .page-facts small,
+  .page-meta,
+  .page-banner figcaption,
+  .pgal figcaption { font-size: 13px; }
+  .gal__item figcaption { font-size: 12.5px; }
+  .prices__cta span { font-size: 13px; }
+
+  /* Таблицы всё равно прокручиваются вбок, но при меньшем кегле
+     и отступах в видимую часть попадает на столбец больше. */
+  .tbl th, .tbl td { padding: 11px 12px; font-size: 14px; }
+  .tbl th { font-size: 12.5px; letter-spacing: .03em; }
+
+  /* Логотип — тоже кнопка: ведёт на главную. */
+  .nav .brand { display: flex; align-items: center; min-height: 44px; }
+
+  /* Поля формы меньше 16 px заставляют iOS увеличивать страницу
+     при фокусе — и человек оказывается на развёрнутом экране. */
+  .field input, .field textarea, .field select,
+  input[type="text"], input[type="tel"], input[type="email"], textarea { font-size: 16px; }
+
+  /* Галочка согласия — обязательное действие, по ней надо попадать. */
+  .consent input[type="checkbox"] { width: 22px; height: 22px; flex: none; }
+  .consent { gap: 11px; align-items: flex-start; }
+}
